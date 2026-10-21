@@ -32,7 +32,6 @@ export const loadState = (): TPersistedState => {
     return tempState;
   }
 };
-//eslint-disable-next-line
 export const saveState = (state: { cart: unknown; favorites: TFavoritesPersisted }) => {
   try {
     const serializedState = JSON.stringify({
