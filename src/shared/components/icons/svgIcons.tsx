@@ -9,7 +9,7 @@ type TProps = {
 type TSvgProperties = {
   width: number;
   viewBox: string;
-  svgData: JSX.Element;
+  svgData: React.JSX.Element;
   fill?: string;
   stroke?: string;
   style?: string;

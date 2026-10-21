@@ -5,7 +5,7 @@ import { db } from "@/shared/lib/db";
 import { hashPassword } from "@/shared/lib/password";
 
 const registerSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
+  email: z.email("Enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().trim().min(1).max(100).optional(),
 });
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const json = await request.json();
     const parsed = registerSchema.safeParse(json);
     if (!parsed.success) {
-      const first = parsed.error.flatten().fieldErrors;
+      const first = z.flattenError(parsed.error).fieldErrors;
       const message =
         first.email?.[0] ?? first.password?.[0] ?? first.name?.[0] ?? "Invalid input";
       return NextResponse.json({ error: message }, { status: 400 });

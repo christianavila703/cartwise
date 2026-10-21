@@ -27,15 +27,21 @@ const AdminProducts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [formValues, setFormValues] = useState<TAddProductFormValues>(initialForm);
   const [productsList, setProductsList] = useState<TProductListItem[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const getProductsList = async () => {
+      const response = await getAllProducts();
+      if (response.res && !ignore) setProductsList(response.res);
+    };
     getProductsList();
-  }, []);
+    return () => {
+      ignore = true;
+    };
+  }, [reloadKey]);
 
-  const getProductsList = async () => {
-    const response = await getAllProducts();
-    if (response.res) setProductsList(response.res);
-  };
+  const reloadProductsList = () => setReloadKey((key) => key + 1);
 
   const handleAddProduct = async () => {
     setIsLoading(true);
@@ -58,7 +64,7 @@ const AdminProducts = () => {
         {productsList.length ? (
           <>
             {productsList.map((product) => (
-              <ProductListItem key={product.id} data={product} requestReload={getProductsList} />
+              <ProductListItem key={product.id} data={product} requestReload={reloadProductsList} />
             ))}
           </>
         ) : (

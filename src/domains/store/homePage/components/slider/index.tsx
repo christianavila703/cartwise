@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SlidesData } from "@/domains/store/homePage/constants/";
 import { ArrowIcon } from "@/shared/components/icons/svgIcons";
@@ -10,21 +10,11 @@ import { cn } from "@/shared/utils/styling";
 
 export const HomeSlider = () => {
   const [activeSlideNum, setActiveSlideNum] = useState(0);
-  const touchPos = {
+  const touchPos = useRef({
     start: 0,
     end: 0,
-  };
-  let isDragging = false;
-
-  useEffect(() => {
-    const autoSliding = setTimeout(() => {
-      handleSliding(activeSlideNum + 1);
-    }, 5000);
-
-    return () => {
-      clearInterval(autoSliding);
-    };
   });
+  const isDragging = useRef(false);
 
   const handleSliding = (newSlideNumber: number) => {
     setActiveSlideNum((prev) => {
@@ -39,20 +29,31 @@ export const HomeSlider = () => {
     });
   };
 
+  useEffect(() => {
+    const autoSliding = setTimeout(() => {
+      handleSliding(activeSlideNum + 1);
+    }, 5000);
+
+    return () => {
+      clearTimeout(autoSliding);
+    };
+  });
+
   function touchStart(event: React.TouchEvent) {
-    isDragging = true;
-    touchPos.start = event.touches[0].clientX;
+    isDragging.current = true;
+    touchPos.current.start = event.touches[0].clientX;
   }
   function touchMove(event: React.TouchEvent) {
-    if (isDragging) {
-      touchPos.end = event.touches[0].clientX;
+    if (isDragging.current) {
+      touchPos.current.end = event.touches[0].clientX;
     }
   }
 
   const handleTouchEnd = () => {
-    isDragging = false;
-    if (touchPos.start !== touchPos.end && touchPos.end !== 0) {
-      if (touchPos.start < touchPos.end) {
+    isDragging.current = false;
+    const { start, end } = touchPos.current;
+    if (start !== end && end !== 0) {
+      if (start < end) {
         handleSliding(activeSlideNum + 1);
       } else {
         handleSliding(activeSlideNum - 1);
@@ -61,12 +62,12 @@ export const HomeSlider = () => {
   };
 
   function mouseStart(event: React.MouseEvent) {
-    isDragging = true;
-    touchPos.start = event.pageX;
+    isDragging.current = true;
+    touchPos.current.start = event.pageX;
   }
   function mouseMouse(event: React.MouseEvent) {
-    if (isDragging) {
-      touchPos.end = event.pageX;
+    if (isDragging.current) {
+      touchPos.current.end = event.pageX;
     }
   }
 
