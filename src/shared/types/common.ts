@@ -1,4 +1,16 @@
-import { NameValue, OptionSetType, PageType } from "@prisma/client";
+import { OptionSetType, PageType } from "@prisma/client";
+
+/** Shape of each entry stored in the OptionSet.options JSON column */
+export type NameValue = {
+  name: string;
+  value: string;
+};
+
+/** Shape of each entry stored in the Product.specs JSON column */
+export type ProductSpec = {
+  specGroupID: string;
+  specValues: string[];
+};
 
 export type TProductCard = {
   name: string;

@@ -165,7 +165,7 @@ const ListPage = () => {
         {productList.map((product) => (
           <ProductCard
             key={product.id}
-            imgUrl={[IMAGE_BASE_URL + product.images[0], IMAGE_BASE_URL + product.images[1]]}
+            imgUrl={[IMAGE_BASE_URL + product.images[0], IMAGE_BASE_URL + (product.images[1] ?? product.images[0])]}
             name={product.name}
             price={product.price}
             isAvailable={product.isAvailable}

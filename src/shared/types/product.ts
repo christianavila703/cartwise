@@ -1,4 +1,4 @@
-import { ProductSpec } from "@prisma/client";
+import { ProductSpec } from "./common";
 
 export type TUserReview = {
   userName: string;

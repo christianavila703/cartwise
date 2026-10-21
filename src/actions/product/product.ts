@@ -1,8 +1,8 @@
 "use server";
-import { ProductSpec } from "@prisma/client";
 import { z } from "zod";
 
 import { db } from "@/shared/lib/db";
+import { ProductSpec } from "@/shared/types/common";
 import {
   TAddProductFormValues,
   TCartListItemDB,
@@ -41,7 +41,7 @@ export const addProduct = async (data: TAddProductFormValues) => {
     const price = convertStringToFloat(data.price);
     const salePrice = data.salePrice ? convertStringToFloat(data.salePrice) : null;
 
-    const result = db.category.update({
+    const result = await db.category.update({
       where: {
         id: data.categoryID,
       },
@@ -119,7 +119,7 @@ export const getOneProduct = async (productID: string) => {
     });
     if (!result) return { error: "Invalid Data!" };
 
-    const specifications = await generateSpecTable(result.specs);
+    const specifications = await generateSpecTable(result.specs as ProductSpec[]);
     if (!specifications || specifications.length === 0) return { error: "Invalid Date" };
 
     const pathArray: TPath[] | null = await getPathByCategoryID(result.category.id, result.category.parentID);
