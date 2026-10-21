@@ -113,7 +113,8 @@ DATABASE_URL=       # PostgreSQL connection used by the app (Supabase transactio
 DIRECT_URL=         # PostgreSQL connection used by migrations (Supabase session pooler, port 5432)
 NEXTAUTH_SECRET=    # Secret used to sign NextAuth sessions
 NEXTAUTH_URL=       # Base URL of the app, e.g. http://localhost:3000
-CLOUDINARY_URL=     # Base URL for product images; leave empty to serve them from /public
+NEXT_PUBLIC_IMAGE_BASE_URL= # Public image base URL, e.g. https://res.cloudinary.com/<cloud>/image/upload (empty serves /public)
+CLOUDINARY_URL=     # Cloudinary API credentials, server-only (used to upload images)
 ADMIN_EMAIL=        # Admin account created by the seed script
 ADMIN_PASSWORD=
 ```
@@ -128,6 +129,14 @@ npm run db:seed
 ```
 
 > `npm run db:seed` replaces the catalog (categories, brands, specs and products) every time it runs. Users are kept.
+
+### 🖼️ Upload product images to Cloudinary
+
+```shell
+npm run images:upload
+```
+
+This uploads every image referenced by the products from `/public` to Cloudinary, keeping the same paths.
 
 ### ▶️ Start the app
 
@@ -148,6 +157,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run lint:fix` | Run ESLint and fix problems              |
 | `npm run db:migrate` | Apply database migrations              |
 | `npm run db:seed`  | Reset the catalog and create the admin   |
+| `npm run images:upload` | Upload product images to Cloudinary |
 
 ## 👤 Author
 

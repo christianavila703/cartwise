@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { CloseIcon } from "@/shared/components/icons/svgIcons";
 import { SK_Box } from "@/shared/components/UI/skeleton";
+import { IMAGE_BASE_URL } from "@/shared/constants/store";
 import { cn } from "@/shared/utils/styling";
 
 type TProps = {
@@ -20,7 +21,7 @@ const Gallery = ({ images }: TProps) => {
         {images ? (
           images.map((image, index) => (
             <Image
-              src={process.env.IMG_URL + image}
+              src={IMAGE_BASE_URL + image}
               alt=""
               width={64}
               height={64}
@@ -43,7 +44,7 @@ const Gallery = ({ images }: TProps) => {
       <div className={"relative w-full h-[300px] sm:h-[540px]"}>
         {images ? (
           <Image
-            src={process.env.IMG_URL + images[selectedIndex]}
+            src={IMAGE_BASE_URL + images[selectedIndex]}
             alt=""
             fill
             className="cursor-zoom-in object-contain rounded-xl border border-white transition-colors duration-300 hover:border-gray-300"
@@ -68,7 +69,7 @@ const Gallery = ({ images }: TProps) => {
               <CloseIcon width={16} />
             </button>
             <Image
-              src={process.env.IMG_URL + images[selectedIndex]}
+              src={IMAGE_BASE_URL + images[selectedIndex]}
               className="object-contain"
               alt=""
               fill
@@ -82,7 +83,7 @@ const Gallery = ({ images }: TProps) => {
           >
             {images.map((image, index) => (
               <Image
-                src={process.env.IMG_URL + image}
+                src={IMAGE_BASE_URL + image}
                 alt=""
                 width={64}
                 height={64}
