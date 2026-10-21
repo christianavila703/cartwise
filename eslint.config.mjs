@@ -9,10 +9,6 @@ export default defineConfig([
   ...nextTs,
   {
     rules: {
-      // React Compiler rules added in react-hooks v7; existing code predates them
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/immutability": "warn",
-      "react-hooks/globals": "warn",
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "error",
       "import/order": [

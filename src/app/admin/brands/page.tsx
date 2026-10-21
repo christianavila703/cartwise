@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { addBrand, deleteBrand, getAllBrands, updateBrand } from "@/actions/brands/brands";
 import Button from "@/shared/components/UI/button";
@@ -7,8 +7,8 @@ import Input from "@/shared/components/UI/input";
 import Popup from "@/shared/components/UI/popup";
 import { TBrand } from "@/shared/types";
 
-let selectedBrandID = "";
 const Brand = () => {
+  const selectedBrandID = useRef("");
   const [addValue, setAddValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListLoading, setIsListLoading] = useState(true);
@@ -18,19 +18,25 @@ const Brand = () => {
   const [showEdit, setShowEdit] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [showDelete, setShowDelete] = useState(false);
-
-  const fetchBrands = async () => {
-    const response = await getAllBrands();
-
-    if (response.res) {
-      setIsListLoading(false);
-      setBrandList(response.res);
-    }
-  };
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
+    const fetchBrands = async () => {
+      const response = await getAllBrands();
+
+      if (response.res && !ignore) {
+        setIsListLoading(false);
+        setBrandList(response.res);
+      }
+    };
     fetchBrands();
-  }, []);
+    return () => {
+      ignore = true;
+    };
+  }, [reloadKey]);
+
+  const reloadBrands = () => setReloadKey((key) => key + 1);
 
   const handleAdd = async () => {
     if (addValue !== "") {
@@ -42,22 +48,22 @@ const Brand = () => {
       if (response.res) {
         setIsLoading(false);
         setAddValue("");
-        fetchBrands();
+        reloadBrands();
       }
     }
   };
 
   const handleShowEdit = (data: TBrand) => {
-    selectedBrandID = data.id;
+    selectedBrandID.current = data.id;
     setEditValue(data.name);
     setErrorMsg("");
     setShowEdit(true);
   };
   const handleUpdate = async () => {
-    if (selectedBrandID !== "" && editValue !== "") {
+    if (selectedBrandID.current !== "" && editValue !== "") {
       setIsLoading(true);
       const response = await updateBrand({
-        id: selectedBrandID,
+        id: selectedBrandID.current,
         name: editValue,
       });
       if (response.error) {
@@ -67,26 +73,26 @@ const Brand = () => {
       if (response.res) {
         setIsLoading(false);
         setShowEdit(false);
-        fetchBrands();
+        reloadBrands();
       }
     }
   };
 
   const handleShowDelete = (id: string) => {
-    selectedBrandID = id;
+    selectedBrandID.current = id;
     setShowDelete(true);
   };
   const handleDelete = async () => {
-    if (selectedBrandID !== "") {
+    if (selectedBrandID.current !== "") {
       setIsLoading(true);
-      const response = await deleteBrand(selectedBrandID);
+      const response = await deleteBrand(selectedBrandID.current);
       if (response.error) {
         setIsLoading(false);
       }
       if (response.res) {
         setIsLoading(false);
         setShowDelete(false);
-        fetchBrands();
+        reloadBrands();
       }
     }
   };

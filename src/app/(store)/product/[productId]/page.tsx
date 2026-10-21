@@ -30,7 +30,6 @@ const ProductPage = () => {
   }, [productId, router]);
 
   if (productInfo === undefined) return "";
-  let fullPath = "";
 
   return (
     <div className="storeContainer">
@@ -43,18 +42,15 @@ const ProductPage = () => {
                   <Link href={"/"} className="hover:font-medium after:mx-1 after:content-['/'] hover:text-gray-800">
                     Home
                   </Link>
-                  {productInfo.path.map((item, index) => {
-                    fullPath += "/" + item.url;
-                    return (
-                      <Link
-                        key={item.url + index}
-                        href={"/list" + fullPath}
-                        className="after:content-['/'] last:after:content-[''] after:mx-1 hover:text-gray-800"
-                      >
-                        {item.name}
-                      </Link>
-                    );
-                  })}
+                  {productInfo.path.map((item, index) => (
+                    <Link
+                      key={item.url + index}
+                      href={"/list/" + productInfo.path.slice(0, index + 1).map((pathItem) => pathItem.url).join("/")}
+                      className="after:content-['/'] last:after:content-[''] after:mx-1 hover:text-gray-800"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
                 </>
               ) : (
                 <SK_Box width="60%" height="15px" />

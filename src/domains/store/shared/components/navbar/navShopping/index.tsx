@@ -1,6 +1,6 @@
-"use-client";
+"use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import ShoppingCart from "@/domains/store/shoppingCard/components/shoppingCart";
@@ -9,17 +9,19 @@ import { cn } from "@/shared/utils/styling";
 import { TCartState, RootState } from "@/store/shoppingCart";
 import { toggleCart } from "@/store/shoppingCart";
 
+const subscribeNoop = () => () => {};
+
 const NavBarShopping = () => {
   const dispatch = useDispatch();
-  const [cartData, setCartData] = useState<TCartState>();
   const localCartData = useSelector((state: RootState) => state.cart);
+  // the cart is restored from localStorage, so only show it after hydration to match the server render
+  const isClient = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+  const cartData: TCartState | undefined = isClient ? localCartData : undefined;
   let cartItemQuantity = 0;
-
-  useEffect(() => {
-    if (localCartData) {
-      setCartData(localCartData);
-    }
-  }, [localCartData]);
 
   if (cartData && cartData.items.length > 0) {
     cartData.items.map((item) => (cartItemQuantity += item.quantity));
