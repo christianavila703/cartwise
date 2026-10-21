@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  A full-stack e-commerce store and admin dashboard built with Next.js 14, React, TypeScript, Tailwind CSS, Prisma, MongoDB, NextAuth and Redux.
+  A full-stack e-commerce store and admin dashboard built with Next.js 16, React 19, TypeScript, Tailwind CSS, Prisma, PostgreSQL, NextAuth and Redux.
 </p>
 
 ---
@@ -18,11 +18,11 @@
 
 | Layer      | Technology                              |
 | ---------- | --------------------------------------- |
-| Framework  | Next.js 14 (App Router), React 18       |
+| Framework  | Next.js 16 (App Router), React 19       |
 | Language   | TypeScript                              |
 | Styling    | Tailwind CSS                            |
 | State      | Redux Toolkit                           |
-| Database   | MongoDB (Atlas) with Prisma ORM         |
+| Database   | PostgreSQL (Supabase) with Prisma ORM   |
 | Auth       | NextAuth                                |
 | Validation | Zod                                     |
 | Images     | Cloudinary                              |
@@ -82,8 +82,9 @@
 
 #### ⚙️ Backend
 
-- MongoDB access through Prisma ORM.
-- Database hosted on MongoDB Atlas.
+- PostgreSQL access through Prisma ORM, with versioned migrations.
+- Database hosted on Supabase.
+- Seed script with a demo catalog and an admin user.
 - Server-side form validation with Zod.
 
 ---
@@ -108,16 +109,34 @@ npm install
 Copy `.env.example` to `.env` and fill in the values:
 
 ```shell
-DATABASE_URL=       # MongoDB connection string
+DATABASE_URL=       # PostgreSQL connection used by the app (Supabase transaction pooler, port 6543)
+DIRECT_URL=         # PostgreSQL connection used by migrations (Supabase session pooler, port 5432)
 NEXTAUTH_SECRET=    # Secret used to sign NextAuth sessions
-CLOUDINARY_URL=     # Hosting address for product images
+NEXTAUTH_URL=       # Base URL of the app, e.g. http://localhost:3000
+NEXT_PUBLIC_IMAGE_BASE_URL= # Public image base URL, e.g. https://res.cloudinary.com/<cloud>/image/upload (empty serves /public)
+CLOUDINARY_URL=     # Cloudinary API credentials, server-only (used to upload images)
+ADMIN_EMAIL=        # Admin account created by the seed script
+ADMIN_PASSWORD=
 ```
 
-### ⬆️ Set up Prisma
+### ⬆️ Set up the database
+
+Create the tables, then load the demo catalog and admin user:
 
 ```shell
-npx prisma db push
+npm run db:migrate
+npm run db:seed
 ```
+
+> `npm run db:seed` replaces the catalog (categories, brands, specs and products) every time it runs. Users are kept.
+
+### 🖼️ Upload product images to Cloudinary
+
+```shell
+npm run images:upload
+```
+
+This uploads every image referenced by the products from `/public` to Cloudinary, keeping the same paths.
 
 ### ▶️ Start the app
 
@@ -136,6 +155,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run start`    | Start the production server              |
 | `npm run lint`     | Run ESLint                               |
 | `npm run lint:fix` | Run ESLint and fix problems              |
+| `npm run db:migrate` | Apply database migrations              |
+| `npm run db:seed`  | Reset the catalog and create the admin   |
+| `npm run images:upload` | Upload product images to Cloudinary |
 
 ## 👤 Author
 

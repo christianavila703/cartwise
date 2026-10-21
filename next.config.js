@@ -9,9 +9,6 @@ const nextConfig = {
       },
     ],
   },
-  env: {
-    IMG_URL: process.env.CLOUDINARY_URL,
-  },
 };
 
 module.exports = nextConfig;
