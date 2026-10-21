@@ -4,7 +4,7 @@ import { OptionSetType } from "@prisma/client";
 import { z } from "zod";
 
 import { db } from "@/shared/lib/db";
-import { TOptionSet, TSingleOption, TSingleSpec, TSpecGroup } from "@/shared/types/common";
+import { NameValue, TOptionSet, TSingleOption, TSingleSpec, TSpecGroup } from "@/shared/types/common";
 
 const AddOptionSet = z.object({
   name: z.string().min(3),
@@ -30,7 +30,7 @@ export const getOptionSetByCatID = async (categoryID: string) => {
   if (!categoryID || categoryID === "") return { error: "Invalid Data!" };
 
   try {
-    const result: TOptionSet[] = await db.optionSet.findMany({
+    const optionSets = await db.optionSet.findMany({
       where: {
         Category_Option: {
           some: {
@@ -40,7 +40,11 @@ export const getOptionSetByCatID = async (categoryID: string) => {
       },
     });
 
-    if (!result) return { error: "Not Found!" };
+    if (!optionSets) return { error: "Not Found!" };
+    const result: TOptionSet[] = optionSets.map((optionSet) => ({
+      ...optionSet,
+      options: optionSet.options as NameValue[],
+    }));
     return { res: result };
   } catch (error) {
     return { error: JSON.stringify(error) };
@@ -96,18 +100,18 @@ export const addSingleOption = async (data: TSingleOption) => {
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
-    const result = await db.optionSet.update({
-      where: {
-        id: data.optionSetID,
-      },
-      data: {
-        options: {
-          push: {
-            name: data.name,
-            value: data.value,
-          },
-        },
-      },
+    const result = await db.$transaction(async (tx) => {
+      const optionSet = await tx.optionSet.findUnique({
+        where: { id: data.optionSetID },
+        select: { options: true },
+      });
+      if (!optionSet) return null;
+
+      const options = [...(optionSet.options as NameValue[]), { name: data.name, value: data.value }];
+      return tx.optionSet.update({
+        where: { id: data.optionSetID },
+        data: { options },
+      });
     });
 
     if (!result) return { error: "Can't Insert!" };
@@ -120,20 +124,20 @@ export const deleteSingleOption = async (data: TSingleOption) => {
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
-    const result = await db.optionSet.update({
-      where: {
-        id: data.optionSetID,
-      },
-      data: {
-        options: {
-          deleteMany: {
-            where: {
-              name: data.name,
-              value: data.name,
-            },
-          },
-        },
-      },
+    const result = await db.$transaction(async (tx) => {
+      const optionSet = await tx.optionSet.findUnique({
+        where: { id: data.optionSetID },
+        select: { options: true },
+      });
+      if (!optionSet) return null;
+
+      const options = (optionSet.options as NameValue[]).filter(
+        (option) => option.name !== data.name || option.value !== data.value
+      );
+      return tx.optionSet.update({
+        where: { id: data.optionSetID },
+        data: { options },
+      });
     });
 
     if (!result) return { error: "Can't Delete!" };

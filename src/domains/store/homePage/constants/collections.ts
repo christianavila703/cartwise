@@ -10,7 +10,7 @@ export const CollectionsData: TCollectionCard[] = [
       },
       {
         label: "Microsoft Surface",
-        url: "/list/pc-laptops/laptops/microsot",
+        url: "/list/pc-laptops/laptops/microsoft",
       },
       {
         label: "Samsung Galaxy",
@@ -56,7 +56,7 @@ export const CollectionsData: TCollectionCard[] = [
       },
       {
         label: "Samsung Galaxy",
-        url: "/list/watches/Samsung",
+        url: "/list/watches/samsung",
       },
       {
         label: "Android Smartwatches",

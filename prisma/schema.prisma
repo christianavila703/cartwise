@@ -6,13 +6,14 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Category {
-  id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  parentID String? @db.ObjectId
+  id       String  @id @default(cuid())
+  parentID String?
 
   name               String
   url                String
@@ -21,45 +22,43 @@ model Category {
   Category_Option    Category_OptionSet[]
   Category_SpecGroup Category_SpecGroup[]
   products           Product[]
+
+  @@index([parentID])
 }
 
 model Category_OptionSet {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(cuid())
 
   option     OptionSet @relation(fields: [optionID], references: [id], onDelete: Cascade)
-  optionID   String    @db.ObjectId
-  category   Category  @relation(fields: [categoryID], references: [id])
-  categoryID String    @db.ObjectId
+  optionID   String
+  category   Category  @relation(fields: [categoryID], references: [id], onDelete: Cascade)
+  categoryID String
 
   @@unique([optionID, categoryID])
 }
 
 model OptionSet {
-  id              String               @id @default(auto()) @map("_id") @db.ObjectId
+  id              String               @id @default(cuid())
   name            String
-  options         NameValue[]
+  /// NameValue[]: [{ name: string; value: string }]
+  options         Json                 @default("[]")
   type            OptionSetType
   Category_Option Category_OptionSet[]
 }
 
-type NameValue {
-  name  String
-  value String
-}
-
 model Category_SpecGroup {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(cuid())
 
   specGroup   SpecGroup @relation(fields: [specGroupID], references: [id], onDelete: Cascade)
-  specGroupID String    @db.ObjectId
-  category    Category  @relation(fields: [categoryID], references: [id])
-  categoryID  String    @db.ObjectId
+  specGroupID String
+  category    Category  @relation(fields: [categoryID], references: [id], onDelete: Cascade)
+  categoryID  String
 
   @@unique([specGroupID, categoryID])
 }
 
 model SpecGroup {
-  id                 String               @id @default(auto()) @map("_id") @db.ObjectId
+  id                 String               @id @default(cuid())
   title              String
   specs              String[]
   Category_SpecGroup Category_SpecGroup[]
@@ -71,42 +70,41 @@ enum OptionSetType {
 }
 
 model Product {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  id              String      @id @default(cuid())
   name            String
-  isAvailable     Boolean       @default(true)
+  isAvailable     Boolean     @default(true)
   desc            String?
   specialFeatures String[]
   images          String[]
-  category        Category      @relation(fields: [categoryID], references: [id])
-  categoryID      String        @db.ObjectId
-  optionSets      String[]      @db.ObjectId
+  category        Category    @relation(fields: [categoryID], references: [id])
+  categoryID      String
+  optionSets      String[]
   price           Float
   salePrice       Float?
-  specs           ProductSpec[]
-  brand           Brand         @relation(fields: [brandID], references: [id])
-  brandID         String        @db.ObjectId
+  /// ProductSpec[]: [{ specGroupID: string; specValues: string[] }]
+  specs           Json        @default("[]")
+  brand           Brand       @relation(fields: [brandID], references: [id])
+  brandID         String
   PageVisit       PageVisit[]
-}
 
-type ProductSpec {
-  specGroupID String
-  specValues  String[]
+  @@index([categoryID])
+  @@index([brandID])
 }
 
 model Brand {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  id       String    @id @default(cuid())
   name     String    @unique
   products Product[]
 }
 
 model PageVisit {
-  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  id               String    @id @default(cuid())
   time             DateTime? @default(now())
   pageType         PageType
   pagePath         String?
   deviceResolution String?
-  productID        String?   @db.ObjectId
-  product          Product?  @relation(fields: [productID], references: [id])
+  productID        String?
+  product          Product?  @relation(fields: [productID], references: [id], onDelete: SetNull)
 }
 
 enum PageType {
@@ -115,19 +113,19 @@ enum PageType {
   PRODUCT
 }
 
-// ---------------------- USER MANAGEMENT SECTION ---------------------- 
+// ---------------------- USER MANAGEMENT SECTION ----------------------
 model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
+  id                String  @id @default(cuid())
+  userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.String
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -136,7 +134,7 @@ model Account {
 }
 
 model User {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  id             String    @id @default(cuid())
   name           String?
   email          String?   @unique
   emailVerified  DateTime?
