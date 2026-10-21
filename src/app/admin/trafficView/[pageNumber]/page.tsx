@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TTrafficListItem, deleteTraffic, getTrafficReport } from "@/actions/pageVisit/pageVisitServices";
 import Button from "@/shared/components/UI/button";
@@ -18,44 +18,50 @@ const TrafficView = () => {
   const pageNumberInt = Number(pageNumber);
 
   const [totalNumber, setTotalNumber] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const getTraffic = useCallback(async () => {
-    setIsLoading(true);
-
-    const currentPage = Number(pageNumber);
-
-    if (isNaN(currentPage)) {
-      setIsLoading(false);
-      throw new Error("Page number is not valid");
-    }
-
-    const response = await getTrafficReport((currentPage - 1) * 20);
-
-    if (response.error) {
-      setIsLoading(false);
-      throw new Error(response.error);
-    }
-
-    if (response?.res?.list && response?.res?.totalCount) {
-      setTrafficList(response.res.list);
-      setTotalNumber(response.res.totalCount);
-    }
-
-    setIsLoading(false);
-  }, [pageNumber]);
+  // loading lasts until the response for the current page and reload request arrives
+  const requestKey = `${pageNumber}-${reloadKey}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const isLoading = !isNaN(pageNumberInt) && loadedKey !== requestKey;
 
   useEffect(() => {
+    let ignore = false;
+
+    const getTraffic = async () => {
+      const currentPage = Number(pageNumber);
+
+      if (isNaN(currentPage)) throw new Error("Page number is not valid");
+
+      const response = await getTrafficReport((currentPage - 1) * 20);
+      if (ignore) return;
+
+      if (response.error) {
+        setLoadedKey(requestKey);
+        throw new Error(response.error);
+      }
+
+      if (response?.res?.list && response?.res?.totalCount) {
+        setTrafficList(response.res.list);
+        setTotalNumber(response.res.totalCount);
+      }
+
+      setLoadedKey(requestKey);
+    };
     getTraffic();
-  }, [getTraffic]);
+
+    return () => {
+      ignore = true;
+    };
+  }, [pageNumber, requestKey]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     const response = await deleteTraffic(id);
 
     if (response.res) {
-      getTraffic();
+      setReloadKey((key) => key + 1);
     }
 
     setDeletingId(null);
