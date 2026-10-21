@@ -10,7 +10,7 @@ const nextConfig = {
     ],
   },
   env: {
-    IMG_URL: process.env.CLOUDINARY_URL,
+    IMG_URL: process.env.CLOUDINARY_URL || "",
   },
 };
 
