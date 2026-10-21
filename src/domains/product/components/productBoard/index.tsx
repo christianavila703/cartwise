@@ -39,7 +39,7 @@ const ProductBoard = ({ boardData }: { boardData: TProductBoard }) => {
           <StarIcon width={15} stroke="#856B0F" fill="#FFD643" />
           <StarIcon width={15} stroke="#856B0F" fill="#FFD643" />
           <StarIcon width={15} stroke="#856B0F" fill="#FFD643" />
-          <Link href={"#"} className="ml-4 text-xs text-bitex-blue-300">
+          <Link href={"#"} className="ml-4 text-xs text-cartwise-blue-300">
             880 User Reviews
           </Link>
         </div>
@@ -60,7 +60,7 @@ const ProductBoard = ({ boardData }: { boardData: TProductBoard }) => {
 
       {dealPrice && (
         <div className="mb-5 text-sm">
-          <span className="text-white rounded-sm bg-bitex-red-500 px-3 py-1">
+          <span className="text-white rounded-sm bg-cartwise-red-500 px-3 py-1">
             {`
             Save
             ${(price - dealPrice).toLocaleString("en-us", {

@@ -45,7 +45,7 @@ const TodayDealCard = ({ productName, newPrice, oldPrice, image, dealEndTime, sp
           className="object-contain transition-all duration-400 ease-out opacity-0 scale-[0.9]"
         />
       </Link>
-      <div className="absolute top-5 left-5 rounded-md px-2 py-1 bg-bitex-red-500 text-sm text-white">
+      <div className="absolute top-5 left-5 rounded-md px-2 py-1 bg-cartwise-red-500 text-sm text-white">
         <span>Save {saveAmount.toLocaleString("en-us", { minimumFractionDigits: 2 })} €</span>
       </div>
       <Link href={url}>

@@ -57,7 +57,7 @@ const StoreNavBar = () => {
       <section className="w-full">
         <div className="storeContainer w-full relative flex justify-between items-center">
           <Link href={"/"} className="mr-0 xl:mr-20 lg:mr-10">
-            <Image alt="Bitex Logo" src={"/images/logo.png"} width={125} height={40} quality={100} />
+            <Image alt="Cartwise Logo" src={"/images/logo.webp"} width={120} height={40} quality={100} />
           </Link>
           <div className="h-11 relative flex-1 mx-6 sm:mx-10">
             <input

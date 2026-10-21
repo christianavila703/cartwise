@@ -18,7 +18,7 @@ export const Input = (props: TProps) => {
     <input
       {...rest}
       className={cn(
-        "w-full bg-white border border-gray-300 text-gray-700 transition-colors duration-300 focus:border-bitex-blue-500 hover:border-gray-400",
+        "w-full bg-white border border-gray-300 text-gray-700 transition-colors duration-300 focus:border-cartwise-blue-500 hover:border-gray-400",
         sizeClasses[inputSize],
         className
       )}

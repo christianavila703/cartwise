@@ -6,7 +6,7 @@ import { LoginForm } from "./LoginForm";
 
 function LoginFallback() {
   return (
-    <AuthFormCard title="Sign in" subtitle="Welcome back to BITEX.">
+    <AuthFormCard title="Sign in" subtitle="Welcome back to Cartwise.">
       <div className="h-48 animate-pulse rounded-lg bg-gray-100" />
     </AuthFormCard>
   );

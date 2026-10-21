@@ -19,7 +19,7 @@ const CheckBox = ({ text, isChecked, onClick }: TProps) => {
       <div
         className={cn(
           "size-5 rounded-[3px] flex items-center justify-center border border-gray-400 transition-all duration-500",
-          { "bg-bitex-blue-500 border-bitex-blue-500": isChecked }
+          { "bg-cartwise-blue-500 border-cartwise-blue-500": isChecked }
         )}
       >
         <CheckIcon

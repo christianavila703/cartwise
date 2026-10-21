@@ -32,7 +32,7 @@ const AddCategory = ({ data, errorMsg, onChange }: TProps) => {
 
       {errorMsg !== "" && (
         <div className="col-span-7">
-          <span className="text-bitex-red-500">{errorMsg}</span>
+          <span className="text-cartwise-red-500">{errorMsg}</span>
         </div>
       )}
     </div>

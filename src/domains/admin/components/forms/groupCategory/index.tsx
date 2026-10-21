@@ -72,7 +72,7 @@ const GroupCategory = ({ errorMsg, data, onChange }: TProps) => {
           </>
         )}
       </div>
-      {errorMsg !== "" && <span className="col-span-3 text-bitex-red-500">{errorMsg}</span>}
+      {errorMsg !== "" && <span className="col-span-3 text-cartwise-red-500">{errorMsg}</span>}
     </div>
   );
 };

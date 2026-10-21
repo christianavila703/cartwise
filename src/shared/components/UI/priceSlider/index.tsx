@@ -51,7 +51,7 @@ const PriceSlider = ({ sliderValues, minMaxLimit, pageStatus, onChange }: TProps
       <div className="w-full relative">
         <div className="h-1 absolute left-0 right-0 rounded-sm bg-gray-200" />
         <div
-          className="h-1 absolute bg-bitex-blue-500 ml-1.5"
+          className="h-1 absolute bg-cartwise-blue-500 ml-1.5"
           style={{
             left: convertToPercent(sliderValues[0]) + "%",
             right: 100 - convertToPercent(sliderValues[1]) + "%",

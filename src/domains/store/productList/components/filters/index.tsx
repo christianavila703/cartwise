@@ -49,7 +49,7 @@ const Filters = ({
 
       <div
         className={cn(
-          "lg:min-w-[220px] w-[310px] ease-bitex-easeOut transition-all pb-8 duration-500 lg:w-auto max-w-[260px] absolute lg:relative h-full px-5 border-r bg-white lg:z-1 z-20 border-gray-300 overflow-y-scroll",
+          "lg:min-w-[220px] w-[310px] ease-cartwise-easeOut transition-all pb-8 duration-500 lg:w-auto max-w-[260px] absolute lg:relative h-full px-5 border-r bg-white lg:z-1 z-20 border-gray-300 overflow-y-scroll",
           showFilters ? "left-0" : "left-[-310px] lg:left-0"
         )}
       >
@@ -128,7 +128,7 @@ const Filters = ({
         </div>
         <Button
           disabled={isFilterChanged}
-          className="w-full py-1 text-sm rounded-md text-gray-100 border-none bg-bitex-blue-500 hover:bg-bitex-blue-600 active:bg-bitex-blue-400 disabled:bg-bitex-blue-700"
+          className="w-full py-1 text-sm rounded-md text-gray-100 border-none bg-cartwise-blue-500 hover:bg-cartwise-blue-600 active:bg-cartwise-blue-400 disabled:bg-cartwise-blue-700"
           onClick={() => onApplyFilter()}
         >
           Apply Changes

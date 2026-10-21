@@ -1,109 +1,142 @@
-## Full Stack E-Commerce Website (+ Dashboard) with Next.js 14: React, Typescript, Tailwindcss, Prisma, MongoDB, NextAuth, Redux.
+<p align="center">
+  <img src="public/images/logo.webp" alt="Cartwise" width="360" />
+</p>
 
-![Fullstack E-Commerce Website](https://res.cloudinary.com/drokemaoa/image/upload/v1709638892/bitexPoster.png)
+<p align="center">
+  A full-stack e-commerce store and admin dashboard built with Next.js 14, React, TypeScript, Tailwind CSS, Prisma, MongoDB, NextAuth and Redux.
+</p>
+
+---
 
 ## Overview
 
-Bitex is a full-stack E-Commerce project developed with Next.js 14, featuring a range of technologies including React, Typescript, Tailwindcss, Prisma, MongoDB, NextAuth, and Redux.
+**Cartwise** is a full-stack e-commerce web application with a customer-facing storefront and an admin dashboard for managing the catalog.
 
-⚠️ `Note:` This project is a personal endeavor created for portfolio purposes and is not associated with any real business or project.
+⚠️ `Note:` This project is a personal endeavor created for portfolio purposes and is not associated with any real business.
+
+## 🧰 Tech Stack
+
+| Layer      | Technology                              |
+| ---------- | --------------------------------------- |
+| Framework  | Next.js 14 (App Router), React 18       |
+| Language   | TypeScript                              |
+| Styling    | Tailwind CSS                            |
+| State      | Redux Toolkit                           |
+| Database   | MongoDB (Atlas) with Prisma ORM         |
+| Auth       | NextAuth                                |
+| Validation | Zod                                     |
+| Images     | Cloudinary                              |
 
 ---
 
 ### 🖥️ Admin Dashboard Features
 
-#### 🔐 Authentication:
+#### 🔐 Authentication
 
-- Credential authentication for Dashboard using NextAuth.
+- Credential authentication for the dashboard using NextAuth.
 
-#### 📁 Category Management:
+#### 📁 Category Management
 
 - Advanced category management, including combining categories.
 - Add, update, and delete categories and subcategories.
 - Dedicated **specifications** for every category.
 
-#### 🏭 Brands and Products:
+#### 🏭 Brands and Products
 
 - Add and delete products with category-specific specifications.
 - Add, update, and delete brands.
 
-#### 📋 Traffic Report:
+#### 📋 Traffic Report
 
-- Reports on user page visits.
-
-<br/>
-<br/>
+- Reports on user page visits with pagination.
 
 ---
 
-### 🛍️ E-Commerce Store Features
+### 🛍️ Storefront Features
 
-#### 🎨 UI Features:
+#### 👤 Accounts
 
-- Full responsiveness
-- CSS animations and effects
-- Skeleton loadings (without using external library )to have seamless page navigation experience.
-- Custom made UI Components (no external library):
+- Customer sign up and sign in.
+- Favourite products.
 
+#### 🎨 UI
+
+- Fully responsive layout.
+- CSS animations and effects.
+- Skeleton loading (no external library) for seamless page navigation.
+- Custom-built UI components (no external library):
   - Price range slider
-  - CheckBox
-  - DropDownList
+  - Checkbox
+  - Dropdown list
   - Popups
   - Button
-
-- Interactive Homepage Slider
-
-  - Crafted from scratch without using any Library
-  - Supports both Mouse Drag and `TouchInput`
-
+- Interactive homepage slider, built from scratch, supporting both mouse drag and touch input.
 - Shopping cart management with **Redux**.
 - Product gallery to showcase items attractively.
-- Dynamically Loading Categories (List) from Database
+- Categories loaded dynamically from the database.
 
-#### 🔍 Filter and Sort:
+#### 🔍 Filter and Sort
 
-- Advanced filters products by Price, Brand, and Availability.
-- Sorting options in product list page (sort by name and price).
+- Filter products by price, brand, and availability.
+- Sort the product list by name and price.
 
-#### ⚙️ Backend:
+#### ⚙️ Backend
 
-- Interaction with MongoDB database using Prisma ORM.
-- Database integration using MongoDB hosted on MongoDB Atlas.
-- Server-side form data validation using ZOD.
+- MongoDB access through Prisma ORM.
+- Database hosted on MongoDB Atlas.
+- Server-side form validation with Zod.
 
-<br/>
+---
 
 ## 🚀 Getting Started
 
-#### 💾 Cloning the repository
+### 💾 Clone the repository
 
 ```shell
-git clone https://github.com/echandsome/Nextjs-e-commerce.git
+git clone https://github.com/christianavila703/cartwise.git
+cd cartwise
 ```
 
-#### 📥 Install packages
+### 📥 Install packages
 
 ```shell
-npm i
+npm install
 ```
 
-#### 🛠️ Setup .env file
+### 🛠️ Set up the `.env` file
 
-```js
-DATABASE_URL=
-NEXTAUTH_SECRET=
-CLOUDINARY_URL= //Hosting address for products images
+Copy `.env.example` to `.env` and fill in the values:
+
+```shell
+DATABASE_URL=       # MongoDB connection string
+NEXTAUTH_SECRET=    # Secret used to sign NextAuth sessions
+CLOUDINARY_URL=     # Hosting address for product images
 ```
 
-#### ⬆️ Setup Prisma
+### ⬆️ Set up Prisma
 
 ```shell
 npx prisma db push
-
 ```
 
-#### 🚀 Start the app
+### ▶️ Start the app
 
 ```shell
 npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📜 Scripts
+
+| Command            | Description                              |
+| ------------------ | ---------------------------------------- |
+| `npm run dev`      | Start the development server             |
+| `npm run build`    | Generate the Prisma client and build     |
+| `npm run start`    | Start the production server              |
+| `npm run lint`     | Run ESLint                               |
+| `npm run lint:fix` | Run ESLint and fix problems              |
+
+## 👤 Author
+
+**Christian** — [@christianavila703](https://github.com/christianavila703)

@@ -8,8 +8,8 @@ const outfitFont = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "BITEX",
-  description: "Electronic Shop",
+  title: "Cartwise",
+  description: "Cartwise — shop smarter for the latest electronics.",
 };
 
 export default function RootLayout({

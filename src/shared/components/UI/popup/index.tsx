@@ -31,7 +31,7 @@ const Popup = ({
       <div className="absolute inset-0 cursor-pointer bg-[rgba(0,0,0,0.2)] backdrop-blur-[2px]" onClick={onClose} />
       <div
         className={
-          "w-[700px] max-h-[95vh] flex flex-col px-6 py-4 rounded-xl bg-white z-[10] text-gray-700 drop-shadow-sm origin-top animate-poppingUp ease-bitex-easeOut"
+          "w-[700px] max-h-[95vh] flex flex-col px-6 py-4 rounded-xl bg-white z-[10] text-gray-700 drop-shadow-sm origin-top animate-poppingUp ease-cartwise-easeOut"
         }
         style={width ? { width: width } : {}}
       >
