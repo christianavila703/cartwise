@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "BITEX - Product",
+  title: "Cartwise - Product",
 };
 
 const ProductLayout = ({ children }: { children: React.ReactNode }) => {

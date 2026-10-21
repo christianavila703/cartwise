@@ -33,7 +33,7 @@ const Footer = () => {
       <div className="flex-col storeContainer">
         <div className="flex w-full items-center h-32 border-b border-b-gray-300">
           <Link href={"/"}>
-            <Image alt="Bitex Logo" src={"/images/logo.png"} width={125} height={40} />
+            <Image alt="Cartwise Logo" src={"/images/logo.webp"} width={120} height={40} />
           </Link>
           <div className="h-11 w-full relative ml-16">
             <input
@@ -103,7 +103,7 @@ const Footer = () => {
       </div>
       <section className="w-full xl:h-20 bg-gray-100 text-sm">
         <div className="h-full flex-col gap-4 xl:flex-row xl:gap-0 justify-between items-center storeContainer">
-          <span className="text-gray-500 mt-6 xl:mt-0">© {CURRENT_YEAR} BITEX Store. All Rights Reserved.</span>
+          <span className="text-gray-500 mt-6 xl:mt-0">© {CURRENT_YEAR} Cartwise. All Rights Reserved.</span>
           <ul className="gap-4 flex flex-col my-6 sm:my-0 sm:flex-row text-gray-800 font-medium">
             {LEGALS.map((item) => (
               <li

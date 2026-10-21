@@ -23,7 +23,7 @@ const AddToCartButton = ({ cartItemData, disabled }: TProps) => {
     <button
       disabled={disabled}
       className={
-        "flex justify-center items-center gap-5 cursor-pointer ml-6 sm:ml-10 text-sm sm:text-lg font-light px-8 sm:px-12 py-2.5 bg-bitex-red-500 rounded-lg text-white transition-all duration-300"
+        "flex justify-center items-center gap-5 cursor-pointer ml-6 sm:ml-10 text-sm sm:text-lg font-light px-8 sm:px-12 py-2.5 bg-cartwise-red-500 rounded-lg text-white transition-all duration-300"
       }
       onClick={() => handleAddToCart()}
     >
