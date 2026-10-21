@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export const useToggleMenu = (
   initialState: boolean,
-  refElement: React.RefObject<HTMLDivElement>,
+  refElement: React.RefObject<HTMLDivElement | null>,
   forceToggle?: boolean // if true when click on same element it will not toggle
 ) => {
   const [isActive, setIsActive] = useState<boolean>(initialState);

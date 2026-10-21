@@ -36,12 +36,6 @@ type TEditSubCat = {
   url: string;
 };
 
-let selectedSubCategory: TEditSubCat = {
-  id: "",
-  name: "",
-  url: "",
-};
-
 const Category = ({ onReset, data, subCategories }: TProps) => {
   const { id: categoryID, name: categoryName, url: categoryUrl } = data;
 
@@ -57,6 +51,7 @@ const Category = ({ onReset, data, subCategories }: TProps) => {
   const [showSubDelete, setShowSubDelete] = useState(false);
 
   const [showSubOptions, setShowSubOptions] = useState(false);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<TEditSubCat>({ id: "", name: "", url: "" });
 
   const [addSubCategoryData, setAddSubCategoryData] = useState<TAddCategory>({
     ...initialCategory,
@@ -152,7 +147,7 @@ const Category = ({ onReset, data, subCategories }: TProps) => {
 
   const handleShowEditSub = (data: TEditSubCat) => {
     const { name, url } = data;
-    selectedSubCategory = { ...data };
+    setSelectedSubCategory({ ...data });
     setEditSubCatData({ ...editSubCatData, name, url });
     setErrorMsg("");
     setShowSubEdit(true);
@@ -195,7 +190,7 @@ const Category = ({ onReset, data, subCategories }: TProps) => {
   };
 
   const handleShowDeleteSub = (id: string) => {
-    selectedSubCategory = { id, name: "", url: "" };
+    setSelectedSubCategory({ id, name: "", url: "" });
     setErrorMsg("");
     setShowSubDelete(true);
   };
@@ -218,7 +213,7 @@ const Category = ({ onReset, data, subCategories }: TProps) => {
 
   // --------------- OPTIONS SECTION ---------------
   const handleShowSubCatOptions = (data: TEditSubCat) => {
-    selectedSubCategory = { ...data };
+    setSelectedSubCategory({ ...data });
     setShowSubOptions(true);
   };
 
