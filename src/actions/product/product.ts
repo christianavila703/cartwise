@@ -3,93 +3,166 @@ import { z } from "zod";
 
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
+import { TAdminProduct } from "@/shared/types/admin";
 import { ProductSpec } from "@/shared/types/common";
 import {
   TAddProductFormValues,
   TCartListItemDB,
   TPath,
-  TProductListItem,
   TProductPageInfo,
   TSpecification,
 } from "@/shared/types/product";
 
-const ValidateAddProduct = z.object({
-  name: z.string().min(3),
-  brandID: z.string().min(6),
-  specialFeatures: z.array(z.string()),
-  desc: z.string().optional(),
-  images: z.array(z.string()),
-  categoryID: z.string().min(6),
-  price: z.string().min(1),
-  salePrice: z.string(),
-  specifications: z.array(
-    z.object({
-      specGroupID: z.string().min(6),
-      specValues: z.array(z.string()),
-    })
-  ),
+const priceString = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(",", "."))
+  .refine((value) => value === "" || (!isNaN(Number(value)) && Number(value) >= 0), "Invalid price");
+
+const ValidateProduct = z
+  .object({
+    name: z.string().trim().min(3, "Name must be at least 3 characters"),
+    brandID: z.string().min(1, "Select a brand"),
+    specialFeatures: z.array(z.string().trim()),
+    desc: z.string().trim().optional(),
+    images: z.array(z.string().trim().min(1)).min(1, "Add at least one image"),
+    categoryID: z.string().min(1, "Select a category"),
+    price: priceString.refine((value) => value !== "" && Number(value) > 0, "Price is required"),
+    salePrice: priceString.optional(),
+    isAvailable: z.boolean(),
+    specifications: z.array(
+      z.object({
+        specGroupID: z.string().min(1),
+        specValues: z.array(z.string()),
+      })
+    ),
+  })
+  .refine((data) => !data.salePrice || Number(data.salePrice) < Number(data.price), {
+    message: "Sale price must be lower than the price",
+    path: ["salePrice"],
+  });
+
+const toProductData = (data: z.infer<typeof ValidateProduct>) => ({
+  name: data.name,
+  desc: data.desc || null,
+  brandID: data.brandID,
+  categoryID: data.categoryID,
+  specialFeatures: data.specialFeatures.filter((feature) => feature !== ""),
+  isAvailable: data.isAvailable,
+  price: Number(data.price),
+  salePrice: data.salePrice ? Number(data.salePrice) : null,
+  images: data.images,
+  specs: data.specifications,
 });
 
-const convertStringToFloat = (str: string) => {
-  str.replace(/,/, ".");
-  return str ? parseFloat(str) : 0.0;
-};
+const firstIssue = (error: z.ZodError) => error.issues[0]?.message ?? "Invalid Data!";
 
 export const addProduct = async (data: TAddProductFormValues) => {
   if (!(await isAdmin())) return UNAUTHORIZED;
-  if (!ValidateAddProduct.safeParse(data).success) return { error: "Invalid Data!" };
+  const parsed = ValidateProduct.safeParse(data);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
 
   try {
-    const price = convertStringToFloat(data.price);
-    const salePrice = data.salePrice ? convertStringToFloat(data.salePrice) : null;
-
-    const result = await db.category.update({
-      where: {
-        id: data.categoryID,
-      },
-      data: {
-        products: {
-          create: {
-            name: data.name,
-            desc: data.desc,
-            brandID: data.brandID,
-            specialFeatures: data.specialFeatures,
-            isAvailable: data.isAvailable,
-            price: price,
-            salePrice: salePrice,
-            images: [...data.images],
-            specs: data.specifications,
-          },
-        },
-      },
-    });
-    if (!result) return { error: "Can't Insert Data" };
+    const result = await db.product.create({ data: toProductData(parsed.data), select: { id: true } });
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Can't save the product" };
+  }
+};
+
+export const updateProduct = async (id: string, data: TAddProductFormValues) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  if (!id) return { error: "Invalid Data!" };
+  const parsed = ValidateProduct.safeParse(data);
+  if (!parsed.success) return { error: firstIssue(parsed.error) };
+
+  try {
+    const result = await db.product.update({ where: { id }, data: toProductData(parsed.data), select: { id: true } });
+    return { res: result };
+  } catch {
+    return { error: "Can't save the product" };
+  }
+};
+
+export const setProductAvailability = async (id: string, isAvailable: boolean) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  if (!id) return { error: "Invalid Data!" };
+
+  try {
+    const result = await db.product.update({ where: { id }, data: { isAvailable }, select: { id: true } });
+    return { res: result };
+  } catch {
+    return { error: "Can't update the product" };
+  }
+};
+
+/** Product values shaped for the admin form. */
+export const getProductForEdit = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  if (!id) return { error: "Invalid Data!" };
+
+  try {
+    const product = await db.product.findUnique({ where: { id } });
+    if (!product) return { error: "Product not found" };
+
+    const formValues: TAddProductFormValues = {
+      name: product.name,
+      desc: product.desc ?? "",
+      brandID: product.brandID,
+      categoryID: product.categoryID,
+      isAvailable: product.isAvailable,
+      price: String(product.price),
+      salePrice: product.salePrice !== null ? String(product.salePrice) : "",
+      images: product.images,
+      specialFeatures: [...product.specialFeatures, "", "", ""].slice(0, Math.max(3, product.specialFeatures.length)),
+      specifications: product.specs as ProductSpec[],
+    };
+    return { res: formValues };
+  } catch {
+    return { error: "Can't load the product" };
   }
 };
 
 export const getAllProducts = async () => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   try {
-    const result: TProductListItem[] | null = await db.product.findMany({
-      select: {
-        id: true,
-        name: true,
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
+    const [products, categories] = await Promise.all([
+      db.product.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          images: true,
+          price: true,
+          salePrice: true,
+          isAvailable: true,
+          createdAt: true,
+          updatedAt: true,
+          brand: { select: { id: true, name: true } },
+          category: { select: { id: true, name: true } },
         },
-      },
-    });
+      }),
+      db.category.findMany({ select: { id: true, name: true, parentID: true } }),
+    ]);
 
-    if (!result) return { error: "Can't Get Data from Database!" };
+    const categoryByID = new Map(categories.map((category) => [category.id, category]));
+    const getCategoryPath = (categoryID: string) => {
+      const names: string[] = [];
+      let current = categoryByID.get(categoryID);
+      while (current && names.length < 5) {
+        names.unshift(current.name);
+        current = current.parentID ? categoryByID.get(current.parentID) : undefined;
+      }
+      return names.join(" / ");
+    };
+
+    const result: TAdminProduct[] = products.map((product) => ({
+      ...product,
+      categoryPath: getCategoryPath(product.category.id),
+    }));
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Can't load products" };
   }
 };
 

@@ -6,23 +6,25 @@ import { db } from "./db";
 export const getSession = () => getServerSession(authOptions);
 
 /**
- * Checks the signed-in user is an admin.
+ * Returns the signed-in user's id when they are an admin, otherwise null.
  * The role is read from the database, not the session token, so a demoted admin loses access immediately.
  */
-export const isAdmin = async () => {
+export const getAdminId = async () => {
   try {
     const session = await getSession();
-    if (!session?.user?.id) return false;
+    if (!session?.user?.id) return null;
 
     const user = await db.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { id: true, role: true },
     });
-    return user?.role === "ADMIN";
+    return user?.role === "ADMIN" ? user.id : null;
   } catch {
     // fail closed: if the role can't be verified, treat the user as not an admin
-    return false;
+    return null;
   }
 };
+
+export const isAdmin = async () => (await getAdminId()) !== null;
 
 export const UNAUTHORIZED = { error: "Unauthorized", res: undefined };

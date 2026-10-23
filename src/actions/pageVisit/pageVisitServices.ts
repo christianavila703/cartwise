@@ -3,8 +3,10 @@ import { PageType } from "@prisma/client";
 import { z } from "zod";
 
 import { TRAFFIC_LIST_PAGE_SIZE } from "@/shared/constants/admin/trafficView";
+import { DAY_MS, getDailyVisits } from "@/shared/lib/analytics";
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
+import { TTrafficStats } from "@/shared/types/admin";
 import { TAddPageVisit } from "@/shared/types/common";
 
 const ValidatePageVisit = z.object({
@@ -48,12 +50,16 @@ export const addVisit = async (data: TAddPageVisit) => {
   }
 };
 
-export const getTrafficReport = async (skip: number = 0) => {
+export const getTrafficReport = async (skip: number = 0, pageType?: PageType) => {
   if (!(await isAdmin())) return UNAUTHORIZED;
+  if (pageType && !(pageType in PageType)) return { error: "Invalid Data!" };
+
   try {
+    const where = pageType ? { pageType } : {};
     const [list, totalCount] = await Promise.all([
       db.pageVisit.findMany({
-        skip: skip,
+        where,
+        skip: Math.max(0, skip),
         take: TRAFFIC_LIST_PAGE_SIZE,
         include: {
           product: {
@@ -68,15 +74,46 @@ export const getTrafficReport = async (skip: number = 0) => {
           },
         },
         orderBy: {
-          id: "desc",
+          time: "desc",
         },
       }),
-      db.pageVisit.count(),
+      db.pageVisit.count({ where }),
     ]);
-    if (!list) return { error: "Can not read Data!" };
     return { res: { list, totalCount } };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Can't load traffic" };
+  }
+};
+
+export const getTrafficStats = async () => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+
+  try {
+    const last30 = new Date(Date.now() - 30 * DAY_MS);
+    const [total, last30Days, byPageType, topPaths, daily] = await Promise.all([
+      db.pageVisit.count(),
+      db.pageVisit.count({ where: { time: { gte: last30 } } }),
+      db.pageVisit.groupBy({ by: ["pageType"], where: { time: { gte: last30 } }, _count: { _all: true } }),
+      db.pageVisit.groupBy({
+        by: ["pagePath"],
+        where: { time: { gte: last30 }, pagePath: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { pagePath: "desc" } },
+        take: 6,
+      }),
+      getDailyVisits(30),
+    ]);
+
+    const result: TTrafficStats = {
+      total,
+      last30Days,
+      daily,
+      byPageType: byPageType.map((row) => ({ pageType: row.pageType, count: row._count._all })),
+      topPaths: topPaths.map((row) => ({ path: row.pagePath ?? "", count: row._count._all })),
+    };
+    return { res: result };
+  } catch {
+    return { error: "Can't load traffic stats" };
   }
 };
 
@@ -90,9 +127,19 @@ export const deleteTraffic = async (id: string) => {
         id,
       },
     });
-    if (!result) return { error: "Can not read Data!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Can't delete the visit" };
+  }
+};
+
+export const clearTraffic = async () => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+
+  try {
+    const result = await db.pageVisit.deleteMany();
+    return { res: result.count };
+  } catch {
+    return { error: "Can't clear traffic" };
   }
 };
