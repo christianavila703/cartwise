@@ -15,8 +15,9 @@ declare module "next-auth" {
 }
 
 declare module "next-auth/jwt" {
+  // optional because tokens issued before roles were added don't have them
   interface JWT {
-    id: string;
-    role: Role;
+    id?: string;
+    role?: Role;
   }
 }

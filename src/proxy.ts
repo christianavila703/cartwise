@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-// first line of defense for admin pages; the admin layout and every admin server action check the role again
+// sends signed-out visitors of admin pages to the login page.
+// the admin role is checked by the admin layout and every admin server action against the database,
+// because the role in the session cookie can be stale until the session is refreshed
 export async function proxy(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
@@ -9,10 +11,6 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (token.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();
