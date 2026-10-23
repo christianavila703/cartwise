@@ -3,6 +3,7 @@ import { PageType } from "@prisma/client";
 import { z } from "zod";
 
 import { TRAFFIC_LIST_PAGE_SIZE } from "@/shared/constants/admin/trafficView";
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { TAddPageVisit } from "@/shared/types/common";
 
@@ -48,6 +49,7 @@ export const addVisit = async (data: TAddPageVisit) => {
 };
 
 export const getTrafficReport = async (skip: number = 0) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   try {
     const [list, totalCount] = await Promise.all([
       db.pageVisit.findMany({
@@ -79,6 +81,7 @@ export const getTrafficReport = async (skip: number = 0) => {
 };
 
 export const deleteTraffic = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id || id === "") return { error: "Invalid Data!" };
 
   try {

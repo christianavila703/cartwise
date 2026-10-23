@@ -1,6 +1,7 @@
 "use server";
 import { z } from "zod";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { TCategory, TGroupJSON } from "@/shared/types/categories";
 
@@ -68,6 +69,7 @@ const convertToJson = (categoriesTable: TCategory[]): TGroupJSON[] => {
 };
 
 export const getAllCategories = async () => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   try {
     const result: TGetAllCategories[] = await db.category.findMany();
 
@@ -89,6 +91,7 @@ export const getAllCategoriesJSON = async () => {
 };
 
 export const addCategory = async (data: TAddCategory) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!AddCategory.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -109,6 +112,7 @@ export const addCategory = async (data: TAddCategory) => {
 };
 
 export const updateCategory = async (data: TUpdateCategory) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!UpdateCategory.safeParse(data).success) return { error: "Data is no valid" };
 
   const { id, iconSize, ...values } = data;
@@ -133,6 +137,7 @@ export const updateCategory = async (data: TUpdateCategory) => {
 };
 
 export const deleteCategory = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id) return { error: "Can't delete it!" };
 
   try {

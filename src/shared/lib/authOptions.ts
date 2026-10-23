@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await db.user.findUnique({
           where: {
-            email: credentials.email,
+            email: credentials.email.trim().toLowerCase(),
           },
         });
 
@@ -39,12 +39,31 @@ export const authOptions: NextAuthOptions = {
           email: user.email ?? undefined,
           name: user.name ?? undefined,
           image: user.image ?? undefined,
+          role: user.role,
         };
       },
     }),
   ],
   session: {
     strategy: "jwt",
+  },
+  callbacks: {
+    jwt({ token, user }) {
+      // user is only set on sign in
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      session.user.id = token.id;
+      session.user.role = token.role;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",

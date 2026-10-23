@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import SignOutButton from "./signOutButton";
+
 const AdminSidebar = () => {
   return (
     <aside className="w-[280px] h-auto bg-white p-6 border-r border-gray-300">
@@ -28,6 +30,15 @@ const AdminSidebar = () => {
       >
         Traffic View
       </Link>
+      <div className="mt-2 pt-2 border-t border-gray-300">
+        <Link
+          className="w-full block px-4 py-2 text-gray-500 rounded-lg transition-colors duration-300 hover:bg-gray-100 active:bg-gray-200"
+          href={"/"}
+        >
+          Back to Store
+        </Link>
+        <SignOutButton className="w-full block text-left px-4 py-2 text-gray-500 rounded-lg transition-colors duration-300 hover:bg-gray-100 active:bg-gray-200" />
+      </div>
     </aside>
   );
 };

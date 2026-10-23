@@ -1,6 +1,7 @@
 "use server";
 import { z } from "zod";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { ProductSpec } from "@/shared/types/common";
 import {
@@ -35,6 +36,7 @@ const convertStringToFloat = (str: string) => {
 };
 
 export const addProduct = async (data: TAddProductFormValues) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!ValidateAddProduct.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -69,6 +71,7 @@ export const addProduct = async (data: TAddProductFormValues) => {
 };
 
 export const getAllProducts = async () => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   try {
     const result: TProductListItem[] | null = await db.product.findMany({
       select: {
@@ -186,6 +189,7 @@ export const getFavoriteProducts = async (productIDs: string[]) => {
 };
 
 export const deleteProduct = async (productID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!productID || productID === "") return { error: "Invalid Data!" };
   try {
     const result = await db.product.delete({
