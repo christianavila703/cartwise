@@ -114,6 +114,11 @@ enum PageType {
 }
 
 // ---------------------- USER MANAGEMENT SECTION ----------------------
+enum Role {
+  USER
+  ADMIN
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -140,5 +145,6 @@ model User {
   emailVerified  DateTime?
   hashedPassword String?
   image          String?
+  role           Role      @default(USER)
   accounts       Account[]
 }

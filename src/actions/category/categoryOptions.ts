@@ -3,6 +3,7 @@
 import { OptionSetType } from "@prisma/client";
 import { z } from "zod";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { NameValue, TOptionSet, TSingleOption, TSingleSpec, TSpecGroup } from "@/shared/types/common";
 
@@ -27,6 +28,7 @@ const SingleSpec = z.object({
 });
 
 export const getOptionSetByCatID = async (categoryID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!categoryID || categoryID === "") return { error: "Invalid Data!" };
 
   try {
@@ -52,6 +54,7 @@ export const getOptionSetByCatID = async (categoryID: string) => {
 };
 
 export const addOptionSet = async (data: TOptionSet) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!AddOptionSet.safeParse(data).success) return { error: "Invalid Data" };
 
   try {
@@ -80,6 +83,7 @@ export const addOptionSet = async (data: TOptionSet) => {
 };
 
 export const deleteOptionSet = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id || id === "") return { error: "Invalid Data" };
 
   try {
@@ -97,6 +101,7 @@ export const deleteOptionSet = async (id: string) => {
 
 // ------------------------- SINGLE OPTION -------------------------
 export const addSingleOption = async (data: TSingleOption) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -121,6 +126,7 @@ export const addSingleOption = async (data: TSingleOption) => {
   }
 };
 export const deleteSingleOption = async (data: TSingleOption) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -150,6 +156,7 @@ export const deleteSingleOption = async (data: TSingleOption) => {
 // ------------------------- SPECIFICATIONS -------------------------
 
 export const getSpecGroupByCatID = async (categoryID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!categoryID || categoryID === "") return { error: "Invalid Data!" };
 
   try {
@@ -171,6 +178,7 @@ export const getSpecGroupByCatID = async (categoryID: string) => {
 };
 
 export const addSpecGroup = async (data: TSpecGroup) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!AddSpecGroup.safeParse(data).success) return { error: "Invalid Data" };
 
   try {
@@ -198,6 +206,7 @@ export const addSpecGroup = async (data: TSpecGroup) => {
   }
 };
 export const deleteSpecGroup = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id || id === "") return { error: "Invalid Data" };
   try {
     const result = await db.specGroup.delete({
@@ -214,6 +223,7 @@ export const deleteSpecGroup = async (id: string) => {
 
 // ------------------------- SINGLE SPEC -------------------------
 export const addSingleSpec = async (data: TSingleSpec) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleSpec.safeParse(data).success) return { error: "Invalid Data!" };
   try {
     const result = await db.specGroup.update({
@@ -233,6 +243,7 @@ export const addSingleSpec = async (data: TSingleSpec) => {
   }
 };
 export const deleteSingleSpec = async (data: TSingleSpec) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleSpec.safeParse(data).success) return { error: "Invalid Data!" };
   try {
     const specsList = await db.specGroup.findFirst({

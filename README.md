@@ -31,9 +31,11 @@
 
 ### 🖥️ Admin Dashboard Features
 
-#### 🔐 Authentication
+#### 🔐 Authentication and Roles
 
-- Credential authentication for the dashboard using NextAuth.
+- Email and password authentication with NextAuth.
+- Role-based access: only users with the `ADMIN` role can open the dashboard.
+- Every admin server action re-checks the role against the database, so the dashboard API can't be called directly by other users.
 
 #### 📁 Category Management
 
@@ -56,7 +58,8 @@
 
 #### 👤 Accounts
 
-- Customer sign up and sign in.
+- Customer sign up, sign in and sign out.
+- Account menu showing the signed-in user, with a dashboard link for admins.
 - Favourite products.
 
 #### 🎨 UI
@@ -130,6 +133,17 @@ npm run db:seed
 
 > `npm run db:seed` replaces the catalog (categories, brands, specs and products) every time it runs. Users are kept.
 
+### 🛡️ Admin access
+
+The seed creates an admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Sign in at `/login`, then open `/admin` (or use **Admin Dashboard** in the account menu).
+
+To change a user's role:
+
+```shell
+npm run user:role -- someone@example.com ADMIN
+npm run user:role -- someone@example.com USER
+```
+
 ### 🖼️ Upload product images to Cloudinary
 
 ```shell
@@ -158,6 +172,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run db:migrate` | Apply database migrations              |
 | `npm run db:seed`  | Reset the catalog and create the admin   |
 | `npm run images:upload` | Upload product images to Cloudinary |
+| `npm run user:role -- <email> <USER\|ADMIN>` | Change a user's role |
 
 ## 👤 Author
 

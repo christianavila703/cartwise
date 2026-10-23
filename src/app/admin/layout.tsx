@@ -1,17 +1,19 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 
 import AdminSidebar from "@/domains/admin/components/sideBar";
-import { authOptions } from "@/shared/lib/authOptions";
+import { getSession, isAdmin } from "@/shared/lib/auth";
 
 export const metadata: Metadata = {
   title: "Admin",
 };
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session) {
+    redirect("/login?callbackUrl=/admin");
+  }
+  if (!(await isAdmin())) {
     redirect("/");
   }
   return (

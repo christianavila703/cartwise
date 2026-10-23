@@ -525,8 +525,8 @@ async function seedAdmin() {
   const hashedPassword = await hashPassword(password);
   await db.user.upsert({
     where: { email },
-    update: { hashedPassword },
-    create: { email, name: "Admin", hashedPassword },
+    update: { hashedPassword, role: "ADMIN" },
+    create: { email, name: "Admin", hashedPassword, role: "ADMIN" },
   });
   console.log(`Admin user ready: ${email}`);
 }

@@ -1,6 +1,7 @@
 "use server";
 import { z } from "zod";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { TBrand } from "@/shared/types";
 
@@ -10,10 +11,11 @@ const ValidateUpdateBrand = z.object({
 });
 
 export const addBrand = async (brandName: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!brandName || brandName === "") return { error: "Invalid Data!" };
 
   try {
-    const result = db.brand.create({
+    const result = await db.brand.create({
       data: {
         name: brandName,
       },
@@ -26,6 +28,7 @@ export const addBrand = async (brandName: string) => {
 };
 
 export const getAllBrands = async () => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   try {
     const result: TBrand[] | null = await db.brand.findMany();
 
@@ -37,6 +40,7 @@ export const getAllBrands = async () => {
 };
 
 export const deleteBrand = async (brandID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!brandID || brandID === "") return { error: "Invalid Data!" };
   try {
     const result = await db.brand.delete({
@@ -53,6 +57,7 @@ export const deleteBrand = async (brandID: string) => {
 };
 
 export const updateBrand = async (data: TBrand) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!ValidateUpdateBrand.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
