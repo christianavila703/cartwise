@@ -5,6 +5,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./db";
 import { verifyPassword } from "./password";
 
+const ROLE_REFRESH_MS = 60 * 1000;
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers: [
@@ -53,18 +55,22 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.roleCheckedAt = Date.now();
         return token;
       }
 
-      // refresh the role on every session check so role changes apply without signing in again;
+      // refresh the role periodically so role changes reach the session without signing in again.
+      // this only drives the UI (e.g. the admin link); admin pages and actions always check the database.
       // tokens issued before roles existed only carry the user id in `sub`
       token.id ??= token.sub ?? "";
-      if (!token.id) return token;
+      const isStale = !token.role || Date.now() - (token.roleCheckedAt ?? 0) > ROLE_REFRESH_MS;
+      if (!token.id || !isStale) return token;
       try {
         const dbUser = await db.user.findUnique({ where: { id: token.id }, select: { role: true } });
         token.role = dbUser?.role ?? "USER";
+        token.roleCheckedAt = Date.now();
       } catch {
-        // keep the previous role if the database is unreachable; admin access is re-checked server side
+        // keep the previous role if the database is unreachable
       }
       return token;
     },
