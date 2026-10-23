@@ -37,20 +37,37 @@
 - Role-based access: only users with the `ADMIN` role can open the dashboard.
 - Every admin server action re-checks the role against the database, so the dashboard API can't be called directly by other users.
 
-#### 📁 Category Management
+#### 📊 Dashboard
 
-- Advanced category management, including combining categories.
-- Add, update, and delete categories and subcategories.
-- Dedicated **specifications** for every category.
+- Key numbers: visits (with change vs the previous 30 days), products, items on sale and customers.
+- 30-day traffic chart, visits by page type, most viewed products and recently added products.
+- Catalog health checks (out of stock, missing images or descriptions) with quick actions.
 
-#### 🏭 Brands and Products
+#### 📦 Products
 
-- Add and delete products with category-specific specifications.
-- Add, update, and delete brands.
+- Searchable, filterable and sortable product table with images, prices, discounts and an inline in-stock switch.
+- Add and **edit** products in a side drawer: details, highlights, pricing with discount preview, category, brand and specifications.
+- Image management: drag-and-drop upload straight to Cloudinary (server-signed), reorder, set the cover image or add an existing path.
+- Server-side validation with clear error messages.
 
-#### 📋 Traffic Report
+#### 📁 Categories
 
-- Reports on user page visits with pagination.
+- Expandable category tree (groups, categories, sub categories) with product counts and search.
+- Visual icon picker for groups and URL slugs generated from the name.
+- Specification groups and options (text or color swatches) per category; sub categories inherit specifications.
+- Deleting is blocked while a category still has sub categories or products.
+
+#### 🏷️ Brands
+
+- Brand cards with product counts, quick add, rename and safe delete (blocked while products use the brand).
+
+#### 👥 Users
+
+- Search and filter accounts, promote or demote admins and delete accounts. Admins can't demote or delete themselves.
+
+#### 📈 Traffic
+
+- Visit totals, 30-day chart, top pages, a filterable visit log with pagination, and clear-all.
 
 ---
 
@@ -112,7 +129,7 @@ npm install
 Copy `.env.example` to `.env` and fill in the values:
 
 ```shell
-DATABASE_URL=       # PostgreSQL connection used by the app (Supabase transaction pooler, port 6543)
+DATABASE_URL=       # PostgreSQL connection used by the app (Supabase session pooler 5432 locally, transaction pooler 6543 on Vercel)
 DIRECT_URL=         # PostgreSQL connection used by migrations (Supabase session pooler, port 5432)
 NEXTAUTH_SECRET=    # Secret used to sign NextAuth sessions
 NEXTAUTH_URL=       # Base URL of the app, e.g. http://localhost:3000

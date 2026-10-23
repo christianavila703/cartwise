@@ -48,8 +48,8 @@ export const getOptionSetByCatID = async (categoryID: string) => {
       options: optionSet.options as NameValue[],
     }));
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -77,8 +77,8 @@ export const addOptionSet = async (data: TOptionSet) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -94,8 +94,8 @@ export const deleteOptionSet = async (id: string) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -121,8 +121,8 @@ export const addSingleOption = async (data: TSingleOption) => {
 
     if (!result) return { error: "Can't Insert!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSingleOption = async (data: TSingleOption) => {
@@ -148,8 +148,8 @@ export const deleteSingleOption = async (data: TSingleOption) => {
 
     if (!result) return { error: "Can't Delete!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -172,8 +172,8 @@ export const getSpecGroupByCatID = async (categoryID: string) => {
 
     if (!result) return { error: "Not Found!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -201,8 +201,8 @@ export const addSpecGroup = async (data: TSpecGroup) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSpecGroup = async (id: string) => {
@@ -216,8 +216,8 @@ export const deleteSpecGroup = async (id: string) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
@@ -238,8 +238,8 @@ export const addSingleSpec = async (data: TSingleSpec) => {
     });
     if (!result) return { error: "Can't Insert!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSingleSpec = async (data: TSingleSpec) => {
@@ -270,7 +270,7 @@ export const deleteSingleSpec = async (data: TSingleSpec) => {
     });
     if (!result) return { error: "Can't Delete!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
