@@ -48,17 +48,29 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       // user is only set on sign in
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        return token;
+      }
+
+      // refresh the role on every session check so role changes apply without signing in again;
+      // tokens issued before roles existed only carry the user id in `sub`
+      token.id ??= token.sub ?? "";
+      if (!token.id) return token;
+      try {
+        const dbUser = await db.user.findUnique({ where: { id: token.id }, select: { role: true } });
+        token.role = dbUser?.role ?? "USER";
+      } catch {
+        // keep the previous role if the database is unreachable; admin access is re-checked server side
       }
       return token;
     },
     session({ session, token }) {
-      session.user.id = token.id;
-      session.user.role = token.role;
+      session.user.id = token.id ?? "";
+      session.user.role = token.role ?? "USER";
       return session;
     },
   },
