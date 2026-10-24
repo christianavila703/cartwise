@@ -86,6 +86,8 @@ model Product {
   brand           Brand       @relation(fields: [brandID], references: [id])
   brandID         String
   PageVisit       PageVisit[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now()) @updatedAt
 
   @@index([categoryID])
   @@index([brandID])
@@ -105,6 +107,8 @@ model PageVisit {
   deviceResolution String?
   productID        String?
   product          Product?  @relation(fields: [productID], references: [id], onDelete: SetNull)
+
+  @@index([time])
 }
 
 enum PageType {
@@ -114,6 +118,11 @@ enum PageType {
 }
 
 // ---------------------- USER MANAGEMENT SECTION ----------------------
+enum Role {
+  USER
+  ADMIN
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -140,5 +149,7 @@ model User {
   emailVerified  DateTime?
   hashedPassword String?
   image          String?
+  role           Role      @default(USER)
   accounts       Account[]
+  createdAt      DateTime  @default(now())
 }
