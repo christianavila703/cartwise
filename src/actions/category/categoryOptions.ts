@@ -3,6 +3,7 @@
 import { OptionSetType } from "@prisma/client";
 import { z } from "zod";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { NameValue, TOptionSet, TSingleOption, TSingleSpec, TSpecGroup } from "@/shared/types/common";
 
@@ -27,6 +28,7 @@ const SingleSpec = z.object({
 });
 
 export const getOptionSetByCatID = async (categoryID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!categoryID || categoryID === "") return { error: "Invalid Data!" };
 
   try {
@@ -46,12 +48,13 @@ export const getOptionSetByCatID = async (categoryID: string) => {
       options: optionSet.options as NameValue[],
     }));
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 export const addOptionSet = async (data: TOptionSet) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!AddOptionSet.safeParse(data).success) return { error: "Invalid Data" };
 
   try {
@@ -74,12 +77,13 @@ export const addOptionSet = async (data: TOptionSet) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 export const deleteOptionSet = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id || id === "") return { error: "Invalid Data" };
 
   try {
@@ -90,13 +94,14 @@ export const deleteOptionSet = async (id: string) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 // ------------------------- SINGLE OPTION -------------------------
 export const addSingleOption = async (data: TSingleOption) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -116,11 +121,12 @@ export const addSingleOption = async (data: TSingleOption) => {
 
     if (!result) return { error: "Can't Insert!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSingleOption = async (data: TSingleOption) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleOption.safeParse(data).success) return { error: "Invalid Data!" };
 
   try {
@@ -142,14 +148,15 @@ export const deleteSingleOption = async (data: TSingleOption) => {
 
     if (!result) return { error: "Can't Delete!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 // ------------------------- SPECIFICATIONS -------------------------
 
 export const getSpecGroupByCatID = async (categoryID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!categoryID || categoryID === "") return { error: "Invalid Data!" };
 
   try {
@@ -165,12 +172,13 @@ export const getSpecGroupByCatID = async (categoryID: string) => {
 
     if (!result) return { error: "Not Found!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 export const addSpecGroup = async (data: TSpecGroup) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!AddSpecGroup.safeParse(data).success) return { error: "Invalid Data" };
 
   try {
@@ -193,11 +201,12 @@ export const addSpecGroup = async (data: TSpecGroup) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSpecGroup = async (id: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id || id === "") return { error: "Invalid Data" };
   try {
     const result = await db.specGroup.delete({
@@ -207,13 +216,14 @@ export const deleteSpecGroup = async (id: string) => {
     });
     if (!result) return { error: "failed" };
     return { res: result };
-  } catch (error) {
-    return { res: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 
 // ------------------------- SINGLE SPEC -------------------------
 export const addSingleSpec = async (data: TSingleSpec) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleSpec.safeParse(data).success) return { error: "Invalid Data!" };
   try {
     const result = await db.specGroup.update({
@@ -228,11 +238,12 @@ export const addSingleSpec = async (data: TSingleSpec) => {
     });
     if (!result) return { error: "Can't Insert!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };
 export const deleteSingleSpec = async (data: TSingleSpec) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!SingleSpec.safeParse(data).success) return { error: "Invalid Data!" };
   try {
     const specsList = await db.specGroup.findFirst({
@@ -259,7 +270,7 @@ export const deleteSingleSpec = async (data: TSingleSpec) => {
     });
     if (!result) return { error: "Can't Delete!" };
     return { res: result };
-  } catch (error) {
-    return { error: JSON.stringify(error) };
+  } catch {
+    return { error: "Something went wrong, please try again" };
   }
 };

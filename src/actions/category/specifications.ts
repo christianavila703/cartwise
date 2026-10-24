@@ -1,9 +1,11 @@
 "use server";
 import { SpecGroup } from "@prisma/client";
 
+import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 
 export const getCategorySpecs = async (categoryID: string) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   if (!categoryID || categoryID === "") return { error: "Invalid Category ID" };
 
   const specifications: SpecGroup[] = [];

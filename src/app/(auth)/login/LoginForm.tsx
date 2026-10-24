@@ -9,10 +9,14 @@ import { AuthFormCard } from "@/app/(auth)/_components/AuthFormCard";
 import Button from "@/shared/components/UI/button";
 import { Input } from "@/shared/components/UI/input";
 
+// only allow redirects to paths on this site, so the login page can't be used to send users elsewhere
+const getSafeCallbackUrl = (value: string | null) =>
+  value && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\") ? value : "/";
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

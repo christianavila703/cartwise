@@ -1,28 +1,26 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
 
-import AdminSidebar from "@/domains/admin/components/sideBar";
-import { authOptions } from "@/shared/lib/authOptions";
+import { AdminShell } from "@/domains/admin/components/shell";
+import { getSession, isAdmin } from "@/shared/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Admin",
+  title: {
+    default: "Dashboard — Cartwise Admin",
+    template: "%s — Cartwise Admin",
+  },
 };
 
 const AdminLayout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await getServerSession(authOptions);
+  const session = await getSession();
   if (!session) {
+    redirect("/login?callbackUrl=/admin");
+  }
+  if (!(await isAdmin())) {
     redirect("/");
   }
-  return (
-    <div className="styles.adminLayout flex min-h-screen">
-      <AdminSidebar />
-      <div className="w-full p-6">
-        <h1 className="w-full block text-gray-700 text-2xl font-light pb-5 mb-2 border-b border-gray-300">Page Name</h1>
-        {children}
-      </div>
-    </div>
-  );
+
+  return <AdminShell user={{ name: session.user.name ?? "", email: session.user.email ?? "" }}>{children}</AdminShell>;
 };
 
 export default AdminLayout;
