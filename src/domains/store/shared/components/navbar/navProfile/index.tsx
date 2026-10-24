@@ -52,14 +52,14 @@ const NavBarProfile = () => {
               {user.name && <span className="block text-sm font-semibold text-gray-800 truncate">{user.name}</span>}
               <span className="block text-xs text-gray-500 truncate">{user.email}</span>
             </div>
-            <Link href="/favorites" className={menuItemClass}>
-              Favorites
-            </Link>
             {user.role === "ADMIN" && (
               <Link href="/admin" className={menuItemClass}>
                 Admin Dashboard
               </Link>
             )}
+            <Link href="/favorites" className={menuItemClass}>
+              Favorites
+            </Link>
             <button type="button" onClick={() => signOut({ callbackUrl: "/" })} className={menuItemClass}>
               Sign Out
             </button>
