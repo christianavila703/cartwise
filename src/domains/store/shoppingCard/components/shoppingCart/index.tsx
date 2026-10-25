@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { getCartProducts } from "@/actions/product/product";
 import { CloseIcon, ShoppingIconEmpty } from "@/shared/components/icons/svgIcons";
 import Button from "@/shared/components/UI/button";
+import { FREE_SHIPPING_THRESHOLD_CENTS, formatCents, toCents } from "@/shared/constants/checkout";
 import { IMAGE_BASE_URL } from "@/shared/constants/store";
 import { TCartListItemDB } from "@/shared/types/product";
 import { TCartItemData } from "@/shared/types/shoppingCart";
@@ -62,6 +64,11 @@ const ShoppingCart = ({ isVisible, quantity, handleOnClose }: TProps) => {
     }
   }, [localCartItems]);
 
+  const subtotalCents = (cartItems ?? []).reduce(
+    (sum, item) => sum + toCents(item.dealPrice ?? item.price) * item.quantity,
+    0
+  );
+
   return (
     <div
       className={cn(
@@ -72,7 +79,7 @@ const ShoppingCart = ({ isVisible, quantity, handleOnClose }: TProps) => {
       <div className="absolute inset-0 sm:bg-black/60 bg-black/40 cursor-pointer" onClick={handleOnClose} />
       <div
         className={cn(
-          "absolute top-0 bottom-0 right-0 sm:w-[400px] w-5/6 bg-white flex flex-col pb-[140px] transition-transform duration-500 easeOutCustom",
+          "absolute top-0 bottom-0 right-0 sm:w-[400px] w-5/6 bg-white flex flex-col pb-[190px] transition-transform duration-500 easeOutCustom",
           isVisible ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -94,11 +101,28 @@ const ShoppingCart = ({ isVisible, quantity, handleOnClose }: TProps) => {
             </div>
           )}
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-[140px] bg-white border-t border-gray-300 flex flex-col items-center justify-center gap-4 mx-6">
+        <div className="absolute bottom-0 left-0 right-0 h-[190px] bg-white border-t border-gray-300 flex flex-col items-center justify-center gap-3 mx-6">
           {!!cartItems?.length && (
-            <Button className="w-4/5 text-sm font-semibold text-green-700 border-green-300 bg-green-50">
-              CHECKOUT
-            </Button>
+            <>
+              <div className="w-4/5 flex flex-col gap-0.5 text-sm">
+                <div className="flex justify-between text-gray-800">
+                  <span>Subtotal</span>
+                  <span className="font-semibold">{formatCents(subtotalCents)}</span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
+                    ? "You get free shipping"
+                    : `Add ${formatCents(FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents)} more for free shipping`}
+                </span>
+              </div>
+              <Link
+                href="/checkout"
+                onClick={handleOnClose}
+                className="w-4/5 h-10 flex items-center justify-center rounded-lg bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+              >
+                Checkout
+              </Link>
+            </>
           )}
           <Button
             onClick={handleOnClose}

@@ -26,6 +26,7 @@
 | Auth       | NextAuth                                |
 | Validation | Zod                                     |
 | Images     | Cloudinary                              |
+| Payments   | Stripe Checkout                         |
 
 ---
 
@@ -72,6 +73,12 @@
 ---
 
 ### 🛍️ Storefront Features
+
+#### 💳 Checkout and Payments
+
+- Checkout with shipping details and a live order summary priced on the server.
+- Secure payment with Stripe Checkout; free shipping over €100.
+- Orders are stored with a snapshot of each product, and confirmed by the success page and a Stripe webhook.
 
 #### 👤 Accounts
 
@@ -135,6 +142,8 @@ NEXTAUTH_SECRET=    # Secret used to sign NextAuth sessions
 NEXTAUTH_URL=       # Base URL of the app, e.g. http://localhost:3000
 NEXT_PUBLIC_IMAGE_BASE_URL= # Public image base URL, e.g. https://res.cloudinary.com/<cloud>/image/upload (empty serves /public)
 CLOUDINARY_URL=     # Cloudinary API credentials, server-only (used to upload images)
+STRIPE_SECRET_KEY=  # Stripe secret key (sk_test_… for test mode)
+STRIPE_WEBHOOK_SECRET= # Signing secret of the /api/stripe/webhook endpoint
 ADMIN_EMAIL=        # Admin account created by the seed script
 ADMIN_PASSWORD=
 ```
@@ -168,6 +177,16 @@ npm run images:upload
 ```
 
 This uploads every image referenced by the products from `/public` to Cloudinary, keeping the same paths.
+
+### 💳 Set up Stripe payments
+
+1. Create a free account at [stripe.com](https://stripe.com) and copy the **test** secret key (`sk_test_…`) from [Developers → API keys](https://dashboard.stripe.com/test/apikeys) into `STRIPE_SECRET_KEY`.
+2. Pay with the test card `4242 4242 4242 4242`, any future expiry date and any CVC.
+3. Optional locally, required in production: point a webhook at `/api/stripe/webhook` for the `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` and `checkout.session.expired` events, and put its signing secret in `STRIPE_WEBHOOK_SECRET`. For local testing the [Stripe CLI](https://docs.stripe.com/stripe-cli) can forward events:
+
+```shell
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
 
 ### ▶️ Start the app
 
