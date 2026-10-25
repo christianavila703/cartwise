@@ -39,6 +39,10 @@ const cartSlice = createSlice({
     remove: (state: TCartState, action: PayloadAction<string>) => {
       state.items = state.items.filter((item) => item.productId !== action.payload);
     },
+    clear: (state: TCartState) => {
+      state.items = [];
+      state.isVisible = false;
+    },
     modifyQuantity: (state: TCartState, action: PayloadAction<QuantityChange>) => {
       state.items.map((item) =>
         item.productId === action.payload.productId ? (item.quantity += action.payload.amount) : ""
@@ -94,5 +98,5 @@ shoppingCartStore.subscribe(() => {
 export type RootState = ReturnType<typeof shoppingCartStore.getState>;
 export type AppDispatch = typeof shoppingCartStore.dispatch;
 
-export const { add, remove, modifyQuantity, toggleCart } = cartSlice.actions;
+export const { add, remove, clear, modifyQuantity, toggleCart } = cartSlice.actions;
 export const { toggleFavorite, removeFavorite } = favoritesSlice.actions;

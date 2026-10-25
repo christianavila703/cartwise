@@ -47,6 +47,11 @@ export const deleteUser = async (userID: string) => {
   if (userID === adminID) return { error: "You can't delete your own account" };
 
   try {
+    // orders are financial records, so customers who ordered are kept
+    const orderCount = await db.order.count({ where: { userId: userID } });
+    if (orderCount > 0) {
+      return { error: `This customer has ${orderCount} order${orderCount > 1 ? "s" : ""} and can't be deleted` };
+    }
     const result = await db.user.delete({ where: { id: userID }, select: { id: true } });
     return { res: result };
   } catch {
