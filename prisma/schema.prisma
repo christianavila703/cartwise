@@ -86,6 +86,7 @@ model Product {
   brand           Brand       @relation(fields: [brandID], references: [id])
   brandID         String
   PageVisit       PageVisit[]
+  orderItems      OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @default(now()) @updatedAt
 
@@ -151,5 +152,69 @@ model User {
   image          String?
   role           Role      @default(USER)
   accounts       Account[]
+  orders         Order[]
   createdAt      DateTime  @default(now())
+}
+
+// ---------------------- ORDERS SECTION ----------------------
+enum OrderStatus {
+  PENDING // created, waiting for payment
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  /// short, human friendly number shown to customers (e.g. #1001)
+  number Int         @unique @default(autoincrement())
+  status OrderStatus @default(PENDING)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  email  String
+
+  // amounts in cents to avoid floating point rounding
+  subtotalCents Int
+  shippingCents Int
+  totalCents    Int
+  currency      String @default("eur")
+
+  shippingName       String
+  shippingPhone      String?
+  shippingLine1      String
+  shippingLine2      String?
+  shippingCity       String
+  shippingPostalCode String
+  shippingCountry    String
+
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String?
+  paidAt                DateTime?
+
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// snapshot of a product at purchase time, so later catalog edits don't change past orders
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  name           String
+  image          String?
+  unitPriceCents Int
+  quantity       Int
+
+  @@index([orderId])
+  @@index([productId])
 }
