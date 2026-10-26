@@ -1,6 +1,7 @@
 "use server";
 
-import { DAY_MS, getDailyVisits } from "@/shared/lib/analytics";
+import { REVENUE_STATUSES } from "@/shared/constants/orders";
+import { DAY_MS, getDailyRevenue, getDailyVisits } from "@/shared/lib/analytics";
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { TDashboardData } from "@/shared/types/admin";
@@ -27,10 +28,16 @@ export const getDashboardData = async () => {
       visitsPrevious30,
       byPageType,
       topVisited,
-      recentProducts,
       catalogImages,
       missingDescription,
       daily,
+      revenueLast30,
+      revenuePrevious30,
+      ordersLast30,
+      ordersPrevious30,
+      awaitingShipment,
+      dailyRevenue,
+      recentOrders,
     ] = await Promise.all([
       db.product.count(),
       db.product.count({ where: { isAvailable: true } }),
@@ -50,14 +57,27 @@ export const getDashboardData = async () => {
         orderBy: { _count: { productID: "desc" } },
         take: 5,
       }),
-      db.product.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, name: true, images: true, price: true, isAvailable: true, createdAt: true },
-      }),
       db.product.findMany({ select: { images: true } }),
       db.product.count({ where: { OR: [{ desc: null }, { desc: "" }] } }),
       getDailyVisits(30),
+      db.order.aggregate({
+        where: { status: { in: REVENUE_STATUSES }, paidAt: { gte: last30 } },
+        _sum: { totalCents: true },
+      }),
+      db.order.aggregate({
+        where: { status: { in: REVENUE_STATUSES }, paidAt: { gte: last60, lt: last30 } },
+        _sum: { totalCents: true },
+      }),
+      db.order.count({ where: { status: { in: REVENUE_STATUSES }, paidAt: { gte: last30 } } }),
+      db.order.count({ where: { status: { in: REVENUE_STATUSES }, paidAt: { gte: last60, lt: last30 } } }),
+      db.order.count({ where: { status: "PAID" } }),
+      getDailyRevenue(30),
+      db.order.findMany({
+        where: { status: { not: "PENDING" } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { id: true, number: true, status: true, shippingName: true, totalCents: true, createdAt: true },
+      }),
     ]);
 
     const topIDs = topVisited.map((row) => row.productID).filter((id): id is string => !!id);
@@ -67,6 +87,15 @@ export const getDashboardData = async () => {
     });
 
     const result: TDashboardData = {
+      sales: {
+        revenueLast30Days: revenueLast30._sum.totalCents ?? 0,
+        revenuePrevious30Days: revenuePrevious30._sum.totalCents ?? 0,
+        ordersLast30Days: ordersLast30,
+        ordersPrevious30Days: ordersPrevious30,
+        awaitingShipment,
+        dailyRevenue,
+      },
+      recentOrders,
       catalog: {
         products,
         inStock,
@@ -96,14 +125,6 @@ export const getDashboardData = async () => {
           };
         })
         .filter((item) => item !== null),
-      recentProducts: recentProducts.map((product) => ({
-        id: product.id,
-        name: product.name,
-        image: product.images[0] ?? null,
-        price: product.price,
-        isAvailable: product.isAvailable,
-        createdAt: product.createdAt,
-      })),
       health: {
         missingImages: catalogImages.filter((product) => product.images.length === 0).length,
         singleImage: catalogImages.filter((product) => product.images.length === 1).length,

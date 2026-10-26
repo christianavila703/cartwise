@@ -11,10 +11,17 @@ const formatDay = (date: string) =>
 
 const WIDTH = 720;
 const HEIGHT = 220;
-const PADDING = { top: 16, right: 8, bottom: 28, left: 36 };
+const PADDING = { top: 16, right: 8, bottom: 28, left: 56 };
 
 /** Smooth area chart of daily counts with a hover tooltip. */
-export const AreaChart = ({ data, label = "Visits" }: { data: TDailyCount[]; label?: string }) => {
+type TAreaChartProps = {
+  data: TDailyCount[];
+  label?: string;
+  /** formats axis ticks and the tooltip, e.g. cents as currency */
+  formatValue?: (value: number) => string;
+};
+
+export const AreaChart = ({ data, label = "Visits", formatValue = (value) => String(value) }: TAreaChartProps) => {
   const gradientID = useId();
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -77,7 +84,7 @@ export const AreaChart = ({ data, label = "Visits" }: { data: TDailyCount[]; lab
               strokeDasharray={tick === 0 ? undefined : "4 4"}
             />
             <text x={PADDING.left - 8} y={y(tick) + 4} textAnchor="end" className="fill-slate-400 text-[11px]">
-              {tick}
+              {formatValue(tick)}
             </text>
           </g>
         ))}
@@ -117,7 +124,7 @@ export const AreaChart = ({ data, label = "Visits" }: { data: TDailyCount[]; lab
           className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg"
           style={{ left: `${(x(hoverIndex) / WIDTH) * 100}%` }}
         >
-          <span className="font-semibold tabular-nums">{hovered.count}</span>{" "}
+          <span className="font-semibold tabular-nums">{formatValue(hovered.count)}</span>{" "}
           <span className="text-slate-300">
             {label.toLowerCase()} · {formatDay(hovered.date)}
           </span>

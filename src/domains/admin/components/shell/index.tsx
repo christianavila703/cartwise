@@ -10,6 +10,7 @@ import {
   LucideIcon,
   Menu,
   Package,
+  ShoppingBag,
   ShoppingCart,
   Tags,
   Users,
@@ -40,6 +41,10 @@ const NAV_SECTIONS: { title: string; items: TNavItem[] }[] = [
   {
     title: "Overview",
     items: [{ label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true }],
+  },
+  {
+    title: "Sales",
+    items: [{ label: "Orders", href: "/admin/orders", icon: ShoppingBag }],
   },
   {
     title: "Catalog",

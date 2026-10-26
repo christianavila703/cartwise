@@ -40,9 +40,15 @@
 
 #### 📊 Dashboard
 
-- Key numbers: visits (with change vs the previous 30 days), products, items on sale and customers.
-- 30-day traffic chart, visits by page type, most viewed products and recently added products.
+- Sales numbers: revenue, orders and average order value (with change vs the previous 30 days) and orders waiting to ship.
+- 30-day revenue and traffic chart, visits by page type, recent orders and most viewed products.
 - Catalog health checks (out of stock, missing images or descriptions) with quick actions.
+
+#### 🧾 Orders
+
+- Order list with revenue, refunds and orders waiting to ship, status tabs, search and date filters.
+- Order details with a progress timeline, customer, shipping address and a link to the payment in Stripe.
+- Mark orders as shipped (carrier and tracking number) and delivered, cancel unpaid orders and refund paid ones through Stripe.
 
 #### 📦 Products
 
@@ -83,6 +89,7 @@
 #### 👤 Accounts
 
 - Customer sign up, sign in and sign out.
+- "My orders" with order progress, parcel tracking links and order details.
 - Account menu showing the signed-in user, with a dashboard link for admins.
 - Favourite products.
 
@@ -182,7 +189,7 @@ This uploads every image referenced by the products from `/public` to Cloudinary
 
 1. Create a free account at [stripe.com](https://stripe.com) and copy the **test** secret key (`sk_test_…`) from [Developers → API keys](https://dashboard.stripe.com/test/apikeys) into `STRIPE_SECRET_KEY`.
 2. Pay with the test card `4242 4242 4242 4242`, any future expiry date and any CVC.
-3. Optional locally, required in production: point a webhook at `/api/stripe/webhook` for the `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` and `checkout.session.expired` events, and put its signing secret in `STRIPE_WEBHOOK_SECRET`. For local testing the [Stripe CLI](https://docs.stripe.com/stripe-cli) can forward events:
+3. Optional locally, required in production: point a webhook at `/api/stripe/webhook` for the `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` and `charge.refunded` events, and put its signing secret in `STRIPE_WEBHOOK_SECRET`. For local testing the [Stripe CLI](https://docs.stripe.com/stripe-cli) can forward events:
 
 ```shell
 stripe listen --forward-to localhost:3000/api/stripe/webhook

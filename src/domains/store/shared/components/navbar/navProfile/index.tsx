@@ -57,6 +57,9 @@ const NavBarProfile = () => {
                 Admin Dashboard
               </Link>
             )}
+            <Link href="/account/orders" className={menuItemClass}>
+              My Orders
+            </Link>
             <Link href="/favorites" className={menuItemClass}>
               Favorites
             </Link>

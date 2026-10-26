@@ -70,7 +70,10 @@ export const markOrderPaid = async (stripeSessionId: string, paymentIntentId: st
 
 /** Cancels an order that was never paid. Paid orders are left untouched. */
 export const markOrderCancelled = async (where: Prisma.OrderWhereInput) => {
-  await db.order.updateMany({ where: { ...where, status: "PENDING" }, data: { status: "CANCELLED" } });
+  await db.order.updateMany({
+    where: { ...where, status: "PENDING" },
+    data: { status: "CANCELLED", cancelledAt: new Date() },
+  });
 };
 
 /**
@@ -105,6 +108,12 @@ const orderSummarySelect = {
   totalCents: true,
   createdAt: true,
   paidAt: true,
+  shippedAt: true,
+  deliveredAt: true,
+  cancelledAt: true,
+  refundedAt: true,
+  trackingCarrier: true,
+  trackingNumber: true,
   shippingName: true,
   shippingPhone: true,
   shippingLine1: true,
@@ -117,8 +126,15 @@ const orderSummarySelect = {
 
 export const getOrderSummary = async (where: Prisma.OrderWhereInput): Promise<TOrderSummary | null> => {
   const order = await db.order.findFirst({ where, select: orderSummarySelect });
-  if (!order) return null;
+  return order ? toOrderSummary(order) : null;
+};
 
+export const getOrderSummaries = async (where: Prisma.OrderWhereInput): Promise<TOrderSummary[]> => {
+  const orders = await db.order.findMany({ where, select: orderSummarySelect, orderBy: { createdAt: "desc" } });
+  return orders.map(toOrderSummary);
+};
+
+const toOrderSummary = (order: Prisma.OrderGetPayload<{ select: typeof orderSummarySelect }>): TOrderSummary => {
   return {
     id: order.id,
     number: order.number,
@@ -129,6 +145,12 @@ export const getOrderSummary = async (where: Prisma.OrderWhereInput): Promise<TO
     totalCents: order.totalCents,
     createdAt: order.createdAt,
     paidAt: order.paidAt,
+    shippedAt: order.shippedAt,
+    deliveredAt: order.deliveredAt,
+    cancelledAt: order.cancelledAt,
+    refundedAt: order.refundedAt,
+    trackingCarrier: order.trackingCarrier,
+    trackingNumber: order.trackingNumber,
     items: order.items,
     address: {
       name: order.shippingName,

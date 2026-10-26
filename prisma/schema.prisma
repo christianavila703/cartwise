@@ -163,6 +163,7 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  REFUNDED
 }
 
 model Order {
@@ -192,6 +193,13 @@ model Order {
   stripeSessionId       String? @unique
   stripePaymentIntentId String?
   paidAt                DateTime?
+
+  trackingCarrier String?
+  trackingNumber  String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  refundedAt      DateTime?
 
   items     OrderItem[]
   createdAt DateTime    @default(now())

@@ -9,12 +9,12 @@ Each item lists the commit message to use when it's done.
 
 ## 🔴 Must-have: what makes it a real store
 
-- [ ] **1. Checkout and orders**
+- [✓] **1. Checkout and orders**
   Cart → shipping address → payment (Stripe test mode) → order confirmation. Add `Order` and `OrderItem` models.
   _Why:_ the cart has no checkout today, so nothing can be bought.
   `feat: add checkout and order placement with stripe`
 
-- [ ] **2. Order management**
+- [✓] **2. Order management**
   Admin order list with status (paid → shipped → delivered), a "My orders" page for customers, revenue on the dashboard.
   _Why:_ without orders the dashboard can't show sales.
   `feat: add order management to admin and customer account`
