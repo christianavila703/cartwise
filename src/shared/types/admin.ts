@@ -1,4 +1,6 @@
-import { PageType, Role } from "@prisma/client";
+import { OrderStatus, PageType, Role } from "@prisma/client";
+
+import { TOrderSummary } from "./checkout";
 
 export type TDailyCount = {
   date: string; // YYYY-MM-DD
@@ -6,6 +8,22 @@ export type TDailyCount = {
 };
 
 export type TDashboardData = {
+  sales: {
+    revenueLast30Days: number;
+    revenuePrevious30Days: number;
+    ordersLast30Days: number;
+    ordersPrevious30Days: number;
+    awaitingShipment: number;
+    dailyRevenue: TDailyCount[];
+  };
+  recentOrders: {
+    id: string;
+    number: number;
+    status: OrderStatus;
+    shippingName: string;
+    totalCents: number;
+    createdAt: Date;
+  }[];
   catalog: {
     products: number;
     inStock: number;
@@ -32,14 +50,6 @@ export type TDashboardData = {
     price: number;
     salePrice: number | null;
     visits: number;
-  }[];
-  recentProducts: {
-    id: string;
-    name: string;
-    image: string | null;
-    price: number;
-    isAvailable: boolean;
-    createdAt: Date;
   }[];
   health: {
     missingImages: number;
@@ -82,6 +92,26 @@ export type TTrafficStats = {
   daily: TDailyCount[];
   byPageType: { pageType: PageType; count: number }[];
   topPaths: { path: string; count: number }[];
+};
+
+export type TAdminOrder = {
+  id: string;
+  number: number;
+  status: OrderStatus;
+  email: string;
+  shippingName: string;
+  shippingCountry: string;
+  totalCents: number;
+  createdAt: Date;
+  itemCount: number;
+  images: (string | null)[];
+};
+
+export type TAdminOrderDetail = TOrderSummary & {
+  stripePaymentIntentId: string | null;
+  /** link to the payment in the Stripe dashboard */
+  stripeDashboardUrl: string | null;
+  customer: { id: string; name: string | null; email: string | null; orderCount: number };
 };
 
 export type TImageUploadSignature = {

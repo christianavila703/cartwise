@@ -58,8 +58,8 @@ const CheckoutSuccessPage = async ({ searchParams }: TProps) => {
           <p className="mt-3 max-w-md text-sm text-gray-500">
             {isPaid ? (
               <>
-                We&apos;ve received your payment and will start preparing your order. Keep order number{" "}
-                <span className="font-medium text-gray-700">#{order.number}</span> for reference.
+                We&apos;ve received your payment and will start preparing your order. You can follow it any time under{" "}
+                <span className="font-medium text-gray-700">My orders</span>.
               </>
             ) : isCancelled ? (
               "The payment wasn't completed, so nothing was charged."
@@ -145,7 +145,15 @@ const CheckoutSuccessPage = async ({ searchParams }: TProps) => {
           </div>
         </section>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {order.status !== "PENDING" && (
+            <Link
+              href={`/account/orders/${order.id}`}
+              className="inline-flex h-11 items-center rounded-xl border border-gray-300 bg-white px-6 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              View order
+            </Link>
+          )}
           <Link
             href="/"
             className="inline-flex h-11 items-center rounded-xl bg-brand-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-700"

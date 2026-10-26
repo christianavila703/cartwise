@@ -47,6 +47,12 @@ export type TOrderSummary = {
   totalCents: number;
   createdAt: Date;
   paidAt: Date | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  cancelledAt: Date | null;
+  refundedAt: Date | null;
+  trackingCarrier: string | null;
+  trackingNumber: string | null;
   address: TShippingAddress;
   items: { id: string; productId: string | null; name: string; image: string | null; unitPriceCents: number; quantity: number }[];
 };

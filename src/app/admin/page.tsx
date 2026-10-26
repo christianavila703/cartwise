@@ -1,15 +1,17 @@
 import {
   AlertTriangle,
   ArrowRight,
-  Boxes,
   CheckCircle2,
+  Euro,
   Eye,
   FolderTree,
   ImageOff,
   Package,
   PackagePlus,
-  Percent,
+  Receipt,
+  ShoppingBag,
   Tags,
+  Truck,
   Users,
 } from "lucide-react";
 import { Metadata } from "next";
@@ -17,17 +19,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getDashboardData } from "@/actions/admin/dashboard";
+import { PerformanceChart } from "@/domains/admin/components/dashboard/performanceChart";
 import { Badge } from "@/domains/admin/components/ui/badge";
 import { Card, CardHeader, StatCard } from "@/domains/admin/components/ui/card";
-import { AreaChart, BarList } from "@/domains/admin/components/ui/charts";
+import { BarList } from "@/domains/admin/components/ui/charts";
 import { EmptyState } from "@/domains/admin/components/ui/misc";
-import {
-  formatNumber,
-  formatPrice,
-  percentChange,
-  productImageUrl,
-  timeAgo,
-} from "@/domains/admin/utils";
+import { formatNumber, formatPrice, percentChange, productImageUrl, timeAgo } from "@/domains/admin/utils";
+import { formatCents } from "@/shared/constants/checkout";
+import { ORDER_STATUS_META } from "@/shared/constants/orders";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -63,15 +62,28 @@ const AdminDashboard = async () => {
     );
   }
 
-  const { catalog, users, visits, topProducts, recentProducts, health } = response.res;
-  const visitTrend = percentChange(visits.last30Days, visits.previous30Days);
-  const stockRate = catalog.products ? Math.round((catalog.inStock / catalog.products) * 100) : 0;
+  const { sales, recentOrders, catalog, users, visits, topProducts, health } = response.res;
+  const revenueTrend = percentChange(sales.revenueLast30Days, sales.revenuePrevious30Days);
+  const ordersTrend = percentChange(sales.ordersLast30Days, sales.ordersPrevious30Days);
+  const averageOrder = sales.ordersLast30Days ? Math.round(sales.revenueLast30Days / sales.ordersLast30Days) : 0;
   const productsLabel = (count: number, single: string, plural: string) =>
     count === 1 ? `product ${single}` : `products ${plural}`;
   const healthIssues = [
-    { count: catalog.outOfStock, label: productsLabel(catalog.outOfStock, "is out of stock", "are out of stock"), tone: "warning" as const },
-    { count: health.missingImages, label: productsLabel(health.missingImages, "has no images", "have no images"), tone: "danger" as const },
-    { count: health.singleImage, label: productsLabel(health.singleImage, "has only one image", "have only one image"), tone: "warning" as const },
+    {
+      count: catalog.outOfStock,
+      label: productsLabel(catalog.outOfStock, "is out of stock", "are out of stock"),
+      tone: "warning" as const,
+    },
+    {
+      count: health.missingImages,
+      label: productsLabel(health.missingImages, "has no images", "have no images"),
+      tone: "danger" as const,
+    },
+    {
+      count: health.singleImage,
+      label: productsLabel(health.singleImage, "has only one image", "have only one image"),
+      tone: "warning" as const,
+    },
     {
       count: health.missingDescription,
       label: productsLabel(health.missingDescription, "has no description", "have no description"),
@@ -91,22 +103,25 @@ const AdminDashboard = async () => {
             <p className="text-sm font-medium text-brand-300">{greeting()} 👋</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Here&apos;s how Cartwise is doing</h1>
             <p className="mt-2 max-w-xl text-sm text-slate-400">
-              {formatNumber(visits.last30Days)} visits in the last 30 days across {formatNumber(catalog.products)}{" "}
-              products. {stockRate}% of your catalog is in stock.
+              {formatCents(sales.revenueLast30Days)} from {formatNumber(sales.ordersLast30Days)} order
+              {sales.ordersLast30Days === 1 ? "" : "s"} in the last 30 days.{" "}
+              {sales.awaitingShipment > 0
+                ? `${sales.awaitingShipment} order${sales.awaitingShipment === 1 ? " is" : "s are"} waiting to ship.`
+                : "Every paid order has shipped."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
-              href="/admin/products?new=1"
+              href="/admin/orders?status=PAID"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-slate-900 shadow-lg transition-transform hover:-translate-y-0.5"
             >
-              <PackagePlus className="size-4" /> Add product
+              <Truck className="size-4" /> Ship orders
             </Link>
             <Link
-              href="/admin/trafficView/1"
+              href="/admin/products?new=1"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/15"
             >
-              View traffic <ArrowRight className="size-4" />
+              <PackagePlus className="size-4" /> Add product
             </Link>
           </div>
         </div>
@@ -116,78 +131,54 @@ const AdminDashboard = async () => {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           className="animate-admin-rise"
-          label="Visits · 30 days"
-          value={formatNumber(visits.last30Days)}
-          icon={Eye}
-          tone="brand"
-          trend={visitTrend}
-          footer={visitTrend === null ? "No earlier data to compare" : "vs previous 30 days"}
+          label="Revenue · 30 days"
+          value={formatCents(sales.revenueLast30Days)}
+          icon={Euro}
+          tone="emerald"
+          trend={revenueTrend}
+          footer={revenueTrend === null ? "No earlier sales to compare" : "vs previous 30 days"}
         />
         <StatCard
           className="animate-admin-rise [animation-delay:60ms]"
-          label="Products"
-          value={formatNumber(catalog.products)}
-          icon={Package}
-          tone="violet"
-          footer={
-            <span>
-              <span className="font-medium text-emerald-600">{formatNumber(catalog.inStock)} in stock</span> ·{" "}
-              {formatNumber(catalog.outOfStock)} out
-            </span>
-          }
+          label="Orders · 30 days"
+          value={formatNumber(sales.ordersLast30Days)}
+          icon={ShoppingBag}
+          tone="brand"
+          trend={ordersTrend}
+          footer={ordersTrend === null ? "No earlier orders to compare" : "vs previous 30 days"}
         />
         <StatCard
           className="animate-admin-rise [animation-delay:120ms]"
-          label="On sale"
-          value={formatNumber(catalog.onSale)}
-          icon={Percent}
-          tone="amber"
-          footer={`${catalog.products ? Math.round((catalog.onSale / catalog.products) * 100) : 0}% of the catalog`}
+          label="Average order"
+          value={formatCents(averageOrder)}
+          icon={Receipt}
+          tone="violet"
+          footer="Last 30 days"
         />
         <StatCard
           className="animate-admin-rise [animation-delay:180ms]"
-          label="Customers"
-          value={formatNumber(users.total)}
-          icon={Users}
-          tone="emerald"
+          label="Waiting to ship"
+          value={formatNumber(sales.awaitingShipment)}
+          icon={Truck}
+          tone="amber"
           footer={
-            <span>
-              <span className="font-medium text-slate-700">+{formatNumber(users.newLast30Days)}</span> this month ·{" "}
-              {users.admins} admin{users.admins === 1 ? "" : "s"}
-            </span>
+            <Link href="/admin/orders?status=PAID" className="font-medium text-brand-600 hover:text-brand-700">
+              Go to orders →
+            </Link>
           }
         />
       </section>
 
-      {/* traffic */}
+      {/* performance */}
       <section className="grid items-start gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader
-            title="Store traffic"
-            description="Daily page visits over the last 30 days"
-            action={
-              <Link
-                href="/admin/trafficView/1"
-                className="text-sm font-medium text-brand-600 transition-colors hover:text-brand-700"
-              >
-                Details
-              </Link>
-            }
-          />
+          <CardHeader title="Performance" description="Daily revenue and store visits over the last 30 days" />
           <div className="px-4 pb-4">
-            {visits.last30Days > 0 ? (
-              <AreaChart data={visits.daily} />
-            ) : (
-              <EmptyState
-                icon={Eye}
-                title="No visits recorded yet"
-                description="Visits are recorded when the store runs in production (npm run build && npm start)."
-              />
-            )}
+            <PerformanceChart revenue={sales.dailyRevenue} visits={visits.daily} />
           </div>
         </Card>
         <Card>
-          <CardHeader title="Where visitors go" description="Last 30 days by page type" />
+          <CardHeader title="Store at a glance" description="Visits by page type, last 30 days" />
           <div className="px-6 pb-6">
             <BarList
               items={visits.byPageType
@@ -199,20 +190,48 @@ const AdminDashboard = async () => {
                 }))}
               emptyText="No visits in the last 30 days"
             />
-            <div className="mt-6 grid grid-cols-3 gap-3 border-t border-slate-100 pt-5">
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5">
               {[
-                { label: "Categories", value: catalog.categories, icon: FolderTree, href: "/admin/categories" },
-                { label: "Brands", value: catalog.brands, icon: Tags, href: "/admin/brands" },
-                { label: "Products", value: catalog.products, icon: Boxes, href: "/admin/products" },
+                {
+                  label: "Products",
+                  value: catalog.products,
+                  detail: `${catalog.inStock} in stock`,
+                  icon: Package,
+                  href: "/admin/products",
+                },
+                {
+                  label: "Customers",
+                  value: users.total,
+                  detail: `+${users.newLast30Days} this month`,
+                  icon: Users,
+                  href: "/admin/users",
+                },
+                {
+                  label: "Categories",
+                  value: catalog.categories,
+                  detail: "in the store menu",
+                  icon: FolderTree,
+                  href: "/admin/categories",
+                },
+                {
+                  label: "Visits",
+                  value: visits.last30Days,
+                  detail: "last 30 days",
+                  icon: Eye,
+                  href: "/admin/trafficView/1",
+                },
               ].map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="group rounded-xl p-3 text-center ring-1 ring-slate-100 transition-all hover:bg-slate-50 hover:ring-slate-200"
+                  className="group rounded-xl p-3 ring-1 ring-slate-100 transition-all hover:bg-slate-50 hover:ring-slate-200"
                 >
-                  <item.icon className="mx-auto size-4 text-slate-400 transition-colors group-hover:text-brand-600" />
-                  <p className="mt-2 text-lg font-semibold text-slate-900 tabular-nums">{item.value}</p>
-                  <p className="text-xs text-slate-500">{item.label}</p>
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <item.icon className="size-3.5 text-slate-400 transition-colors group-hover:text-brand-600" />
+                    {item.label}
+                  </span>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 tabular-nums">{formatNumber(item.value)}</p>
+                  <p className="text-[11px] text-slate-400">{item.detail}</p>
                 </Link>
               ))}
             </div>
@@ -220,8 +239,49 @@ const AdminDashboard = async () => {
         </Card>
       </section>
 
-      {/* products */}
-      <section className="grid gap-6 xl:grid-cols-3">
+      {/* orders and products */}
+      <section className="grid items-start gap-6 xl:grid-cols-3">
+        <Card>
+          <CardHeader
+            title="Recent orders"
+            description="The latest purchases"
+            action={
+              <Link href="/admin/orders" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+                All orders
+              </Link>
+            }
+          />
+          <div className="px-3 pb-3">
+            {recentOrders.length ? (
+              <ul className="flex flex-col">
+                {recentOrders.map((order) => (
+                  <li key={order.id}>
+                    <Link
+                      href={`/admin/orders?order=${order.id}`}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50"
+                    >
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                        #{order.number}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-slate-800">{order.shippingName}</span>
+                        <span className="block text-xs text-slate-500">
+                          {formatCents(order.totalCents)} · {timeAgo(order.createdAt)}
+                        </span>
+                      </span>
+                      <Badge tone={ORDER_STATUS_META[order.status].tone} dot>
+                        {ORDER_STATUS_META[order.status].label}
+                      </Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState icon={ShoppingBag} title="No orders yet" className="py-10" />
+            )}
+          </div>
+        </Card>
+
         <Card>
           <CardHeader title="Most viewed products" description="All-time product page visits" />
           <div className="px-3 pb-3">
@@ -256,41 +316,6 @@ const AdminDashboard = async () => {
         </Card>
 
         <Card>
-          <CardHeader
-            title="Recently added"
-            description="The newest products in your catalog"
-            action={
-              <Link href="/admin/products" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-                All products
-              </Link>
-            }
-          />
-          <div className="px-3 pb-3">
-            <ul className="flex flex-col">
-              {recentProducts.map((product) => (
-                <li key={product.id}>
-                  <Link
-                    href={`/admin/products?edit=${product.id}`}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-slate-50"
-                  >
-                    <ProductThumb src={productImageUrl(product.image)} alt={product.name} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-slate-800">{product.name}</span>
-                      <span className="block text-xs text-slate-500">
-                        {formatPrice(product.price)} · {timeAgo(product.createdAt)}
-                      </span>
-                    </span>
-                    <Badge tone={product.isAvailable ? "success" : "danger"} dot>
-                      {product.isAvailable ? "In stock" : "Sold out"}
-                    </Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Card>
-
-        <Card>
           <CardHeader title="Catalog health" description="Things worth fixing for a better storefront" />
           <div className="px-6 pb-6">
             {healthIssues.length ? (
@@ -321,6 +346,15 @@ const AdminDashboard = async () => {
             ) : (
               <EmptyState icon={CheckCircle2} title="Everything looks great" description="No catalog issues found." />
             )}
+            <Link
+              href="/admin/brands"
+              className="mt-4 flex items-center justify-between rounded-xl px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-100 transition-colors hover:bg-slate-50"
+            >
+              <span className="flex items-center gap-2">
+                <Tags className="size-4 text-slate-400" /> {catalog.brands} brands · {catalog.onSale} products on sale
+              </span>
+              <ArrowRight className="size-4 text-slate-300" />
+            </Link>
           </div>
         </Card>
       </section>

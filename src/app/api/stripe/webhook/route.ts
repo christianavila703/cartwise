@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+import { REFUNDABLE_STATUSES } from "@/shared/constants/orders";
+import { db } from "@/shared/lib/db";
 import { markOrderCancelled, markOrderPaid } from "@/shared/lib/orders";
 import { getStripe } from "@/shared/lib/stripe";
 
@@ -29,6 +31,18 @@ export async function POST(request: Request) {
           const paymentIntentID =
             typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null);
           await markOrderPaid(session.id, paymentIntentID);
+        }
+        break;
+      }
+      case "charge.refunded": {
+        // refunds made in the Stripe dashboard
+        const charge = event.data.object;
+        const paymentIntentID = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+        if (charge.refunded && paymentIntentID) {
+          await db.order.updateMany({
+            where: { stripePaymentIntentId: paymentIntentID, status: { in: REFUNDABLE_STATUSES } },
+            data: { status: "REFUNDED", refundedAt: new Date() },
+          });
         }
         break;
       }
