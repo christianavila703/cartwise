@@ -1,8 +1,10 @@
 "use client";
+import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { NavbarSearch } from "@/domains/store/search/components/navbarSearch";
 import { cn } from "@/shared/utils/styling";
 
 import AddVisit from "../addVisit";
@@ -59,21 +61,15 @@ const StoreNavBar = () => {
           <Link href={"/"} className="mr-0 xl:mr-20 lg:mr-10">
             <Image alt="Cartwise Logo" src={"/images/logo.webp"} width={120} height={40} quality={100} />
           </Link>
-          <div className="h-11 relative flex-1 mx-6 sm:mx-10">
-            <input
-              type="text"
-              className="text-gray-800 hidden sm:block pl-4 size-full border-gray-300 focus:border-gray-500 border rounded-lg outline-gray-500 sm:pl-12"
-              placeholder="Search"
-            />
-            <Image
-              src="/icons/searchIcon.svg"
-              width={16}
-              height={16}
-              alt="Search"
-              className="absolute top-3.5 left-5 hidden sm:block"
-            />
-          </div>
-          <div className="text-gray-500 flex pr-2 md:pr-0">
+          <NavbarSearch className="h-11 flex-1 mx-6 sm:mx-10 hidden sm:block" />
+          <div className="text-gray-500 flex items-center pr-2 md:pr-0">
+            <Link
+              href="/search"
+              aria-label="Search"
+              className="sm:hidden flex size-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
+            >
+              <Search className="size-5" />
+            </Link>
             <NavBarProfile />
             <NavBarFavorite />
             <NavBarShopping />

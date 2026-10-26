@@ -109,6 +109,13 @@
 - Product gallery to showcase items attractively.
 - Categories loaded dynamically from the database.
 
+#### 🔎 Search
+
+- Search-as-you-type in the navbar with product images, prices, matching categories and recent searches, fully keyboard accessible.
+- Multi-word matching across product names, brands, categories and descriptions, ranked by relevance.
+- Typo tolerance ("Did you mean…?") using PostgreSQL trigram similarity (`pg_trgm`).
+- Server-rendered results page with sorting and an in-stock filter.
+
 #### 🔍 Filter and Sort
 
 - Filter products by price, brand, and availability.

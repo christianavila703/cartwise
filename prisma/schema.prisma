@@ -92,6 +92,8 @@ model Product {
 
   @@index([categoryID])
   @@index([brandID])
+  // trigram index for search: speeds up substring matching and powers "did you mean" suggestions
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Brand {

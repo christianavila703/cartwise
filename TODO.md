@@ -19,7 +19,7 @@ Each item lists the commit message to use when it's done.
   _Why:_ without orders the dashboard can't show sales.
   `feat: add order management to admin and customer account`
 
-- [ ] **3. Working search**
+- [✓] **3. Working search**
   The navbar search box has no logic. Add a search results page with suggestions while typing.
   _Why:_ search is the main way people find products.
   `feat: add product search with suggestions`
