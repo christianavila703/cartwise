@@ -10,4 +10,5 @@ export type TCartItemData = {
   price: number;
   dealPrice?: number;
   quantity: number;
+  stock: number;
 };

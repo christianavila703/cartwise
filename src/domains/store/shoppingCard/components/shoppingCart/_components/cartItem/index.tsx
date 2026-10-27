@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 
 import { DeleteIcon } from "@/shared/components/icons/svgIcons";
+import { LOW_STOCK_THRESHOLD, maxOrderQuantity } from "@/shared/constants/checkout";
 import { TCartItemData } from "@/shared/types/shoppingCart";
 import { modifyQuantity, remove } from "@/store/shoppingCart";
 
@@ -15,7 +16,8 @@ type TProps = {
 };
 
 const CartItem = ({ data, onLinkClicked }: TProps) => {
-  const { productName, productId, imgUrl, price, dealPrice = 0, quantity } = data;
+  const { productName, productId, imgUrl, price, dealPrice = 0, quantity, stock } = data;
+  const maxQuantity = maxOrderQuantity(stock);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -58,8 +60,15 @@ const CartItem = ({ data, onLinkClicked }: TProps) => {
               : ""}{" "}
           </span>
         </div>
+        {stock <= 0 ? (
+          <span className="mt-2 text-xs font-medium text-red-600">Out of stock</span>
+        ) : quantity > stock ? (
+          <span className="mt-2 text-xs font-medium text-red-600">Only {stock} available, please reduce the quantity</span>
+        ) : (
+          stock <= LOW_STOCK_THRESHOLD && <span className="mt-2 text-xs font-medium text-amber-700">Only {stock} left</span>
+        )}
         <div className={"flex justify-between items-center mt-3"}>
-          <Quantity onChange={handleQuantityChange} quantity={quantity} iconWidth={8} />
+          <Quantity onChange={handleQuantityChange} quantity={quantity} max={maxQuantity} iconWidth={8} />
           <button
             onClick={() => dispatch(remove(productId))}
             className="size-10 cursor-pointer rounded-md flex items-center justify-center transition-all duration-300 border border-white hover:border-gray-200 hover:bg-gray-100 active:border-gray-300 active:bg-gray-200"

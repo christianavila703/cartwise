@@ -3,16 +3,19 @@ import { MinusIcon, PlusIcon } from "@/shared/components/icons/svgIcons";
 
 type TProps = {
   quantity: number;
+  /** highest quantity allowed, e.g. the units in stock */
+  max?: number;
   iconWidth?: number;
   onChange: (isReducing: boolean) => void;
 };
 
-const Quantity = ({ onChange, quantity, iconWidth = 12 }: TProps) => {
+const Quantity = ({ onChange, quantity, max, iconWidth = 12 }: TProps) => {
   return (
     <div className={"flex items-center"}>
       <button
         onClick={() => onChange(true)}
         disabled={quantity === 1}
+        aria-label="Decrease quantity"
         className="size-8 flex justify-center stroke-gray-500 hover:stroke-gray-800 items-center rounded-full cursor-pointer transition-all duration-300 hover:bg-gray-200 active:bg-gray-300 disabled:cursor-default disabled:hover:bg-white"
       >
         <MinusIcon width={iconWidth} />
@@ -28,7 +31,9 @@ const Quantity = ({ onChange, quantity, iconWidth = 12 }: TProps) => {
       </span>
       <button
         onClick={() => onChange(false)}
-        className="size-8 flex justify-center stroke-gray-500 hover:stroke-gray-800 items-center rounded-full cursor-pointer transition-all duration-300 hover:bg-gray-200 active:bg-gray-300 disabled:cursor-default disabled:hover:bg-white"
+        disabled={max !== undefined && quantity >= max}
+        aria-label="Increase quantity"
+        className="size-8 flex justify-center stroke-gray-500 hover:stroke-gray-800 items-center rounded-full cursor-pointer transition-all duration-300 hover:bg-gray-200 active:bg-gray-300 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-white"
       >
         <PlusIcon width={iconWidth} className="stroke-gray-500" />
       </button>

@@ -18,11 +18,12 @@ import { discountPercent } from "../../utils";
 import { Badge } from "../ui/badge";
 import { AdminButton } from "../ui/button";
 import { AdminInput, AdminSelect, AdminTextarea, Field } from "../ui/field";
-import { Skeleton, Toggle } from "../ui/misc";
+import { Skeleton } from "../ui/misc";
 import { Drawer } from "../ui/overlay";
 import { useToast } from "../ui/toast";
 
 import { ImageManager } from "./imageManager";
+import { StockBadge } from "./stockBadge";
 
 const MAX_FEATURES = 6;
 
@@ -31,7 +32,7 @@ const emptyForm: TAddProductFormValues = {
   desc: "",
   brandID: "",
   categoryID: "",
-  isAvailable: true,
+  stock: "",
   price: "",
   salePrice: "",
   images: [],
@@ -284,12 +285,20 @@ export const ProductEditor = ({ productID, onClose, onSaved }: TProps) => {
                 />
               </Field>
             </div>
-            <div className="mt-4 flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
-              <div>
-                <p className="text-sm font-medium text-slate-800">In stock</p>
-                <p className="text-xs text-slate-500">Out-of-stock products can&apos;t be added to the cart</p>
+            <div className="mt-4 grid items-end gap-4 sm:grid-cols-2">
+              <Field label="Stock quantity" required hint="Units ready to ship. At 0 the product shows as out of stock.">
+                <AdminInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={form.stock}
+                  onChange={(e) => update({ stock: e.currentTarget.value.replace(/[^\d]/g, "") })}
+                  suffix={<span className="text-xs">units</span>}
+                  className="pr-14"
+                />
+              </Field>
+              <div className="pb-6">
+                <StockBadge stock={Number(form.stock || 0)} />
               </div>
-              <Toggle label="In stock" checked={form.isAvailable} onChange={(isAvailable) => update({ isAvailable })} />
             </div>
           </Section>
 

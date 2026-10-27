@@ -12,7 +12,7 @@ import { FREE_SHIPPING_THRESHOLD_CENTS, SHIPPING_COUNTRIES, formatCents } from "
 import { IMAGE_BASE_URL } from "@/shared/constants/store";
 import { TCheckoutPreview, TShippingAddress } from "@/shared/types/checkout";
 import { cn } from "@/shared/utils/styling";
-import { RootState, remove } from "@/store/shoppingCart";
+import { RootState, modifyQuantity, remove } from "@/store/shoppingCart";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-sm text-gray-800 placeholder:text-gray-400 transition-all hover:border-gray-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10";
@@ -105,6 +105,7 @@ export const CheckoutView = ({ user, isTestMode, isPaymentConfigured }: TProps) 
 
   const update = (values: Partial<TShippingAddress>) => setAddress((current) => ({ ...current, ...values }));
   const unavailable = preview?.lines.filter((line) => !line.isAvailable) ?? [];
+  const tooMany = preview?.lines.filter((line) => line.isAvailable && line.quantity > line.stock) ?? [];
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -287,7 +288,20 @@ export const CheckoutView = ({ user, isTestMode, isPaymentConfigured }: TProps) 
                         >
                           {line.name}
                         </Link>
-                        {line.isAvailable ? (
+                        {line.isAvailable && line.quantity > line.stock ? (
+                          <span className="flex flex-wrap items-center gap-x-2 text-xs">
+                            <span className="font-medium text-red-600">Only {line.stock} left</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                dispatch(modifyQuantity({ productId: line.productId, amount: line.stock - line.quantity }))
+                              }
+                              className="cursor-pointer font-medium text-brand-600 hover:underline"
+                            >
+                              Change to {line.stock}
+                            </button>
+                          </span>
+                        ) : line.isAvailable ? (
                           <span className="text-xs text-gray-500">
                             {line.quantity} × {formatCents(line.unitPriceCents)}
                           </span>
@@ -358,6 +372,11 @@ export const CheckoutView = ({ user, isTestMode, isPaymentConfigured }: TProps) 
                 Remove out-of-stock products to continue.
               </p>
             )}
+            {tooMany.length > 0 && (
+              <p className="mt-4 rounded-xl bg-amber-50 px-3.5 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+                Some quantities are higher than what&apos;s in stock. Adjust them to continue.
+              </p>
+            )}
             {!isPaymentConfigured && (
               <p className="mt-4 rounded-xl bg-amber-50 px-3.5 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
                 Online payment isn&apos;t set up yet.
@@ -366,7 +385,9 @@ export const CheckoutView = ({ user, isTestMode, isPaymentConfigured }: TProps) 
 
             <button
               type="submit"
-              disabled={isPaying || isLoading || !preview || unavailable.length > 0 || !isPaymentConfigured}
+              disabled={
+                isPaying || isLoading || !preview || unavailable.length > 0 || tooMany.length > 0 || !isPaymentConfigured
+              }
               className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-600 text-sm font-semibold text-white shadow-lg shadow-brand-600/25 transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
             >
               {isPaying ? (

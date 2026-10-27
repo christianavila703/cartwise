@@ -1,5 +1,6 @@
 "use server";
 
+import { LOW_STOCK_THRESHOLD } from "@/shared/constants/checkout";
 import { REVENUE_STATUSES } from "@/shared/constants/orders";
 import { DAY_MS, getDailyRevenue, getDailyVisits } from "@/shared/lib/analytics";
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
@@ -18,6 +19,7 @@ export const getDashboardData = async () => {
     const [
       products,
       inStock,
+      lowStock,
       onSale,
       categories,
       brands,
@@ -40,7 +42,8 @@ export const getDashboardData = async () => {
       recentOrders,
     ] = await Promise.all([
       db.product.count(),
-      db.product.count({ where: { isAvailable: true } }),
+      db.product.count({ where: { stock: { gt: 0 } } }),
+      db.product.count({ where: { stock: { gt: 0, lte: LOW_STOCK_THRESHOLD } } }),
       db.product.count({ where: { salePrice: { not: null } } }),
       db.category.count(),
       db.brand.count(),
@@ -100,6 +103,7 @@ export const getDashboardData = async () => {
         products,
         inStock,
         outOfStock: products - inStock,
+        lowStock,
         onSale,
         categories,
         brands,

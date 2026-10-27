@@ -24,7 +24,7 @@ Each item lists the commit message to use when it's done.
   _Why:_ search is the main way people find products.
   `feat: add product search with suggestions`
 
-- [ ] **4. Stock quantity**
+- [✓] **4. Stock quantity**
   Track real quantities instead of only in/out of stock, decrease on order, show "low stock" in the admin.
   _Why:_ prevents selling the same last item twice.
   `feat: track product stock quantity`

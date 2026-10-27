@@ -40,3 +40,9 @@ export const formatCents = (cents: number) =>
   new Intl.NumberFormat("en-IE", { style: "currency", currency: CURRENCY }).format(cents / 100);
 
 export const countryName = (code: string) => SHIPPING_COUNTRIES.find((country) => country.code === code)?.name ?? code;
+
+/** products at or below this quantity count as "low stock" */
+export const LOW_STOCK_THRESHOLD = 5;
+
+/** the most of one product a customer can put in the cart right now */
+export const maxOrderQuantity = (stock: number) => Math.max(0, Math.min(MAX_QUANTITY_PER_ITEM, stock));

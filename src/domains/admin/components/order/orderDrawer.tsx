@@ -109,6 +109,7 @@ export const OrderDrawer = ({ orderID, onClose, onChanged }: TProps) => {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<"refund" | "cancel" | null>(null);
+  const [restock, setRestock] = useState(true);
 
   useEffect(() => {
     let ignore = false;
@@ -355,7 +356,11 @@ export const OrderDrawer = ({ orderID, onClose, onChanged }: TProps) => {
                     variant="ghost"
                     size="sm"
                     className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                    onClick={() => setConfirm("refund")}
+                    onClick={() => {
+                      // unshipped goods are still here; shipped ones have to come back first
+                      setRestock(order.status === "PAID");
+                      setConfirm("refund");
+                    }}
                   >
                     <RotateCcw className="size-3.5" /> Refund
                   </AdminButton>
@@ -369,10 +374,37 @@ export const OrderDrawer = ({ orderID, onClose, onChanged }: TProps) => {
       {order && confirm === "refund" && (
         <ConfirmDialog
           title={`Refund order #${order.number}?`}
-          message={`${formatCents(order.totalCents)} will be returned to the customer's card through Stripe. This can't be undone.`}
+          message={
+            <>
+              {formatCents(order.totalCents)} will be returned to the customer&apos;s card through Stripe. This can&apos;t
+              be undone.
+              <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl bg-slate-50 p-3 text-slate-700 ring-1 ring-slate-200">
+                <input
+                  type="checkbox"
+                  checked={restock}
+                  onChange={(e) => setRestock(e.currentTarget.checked)}
+                  className="mt-0.5 size-4 accent-brand-600"
+                />
+                <span>
+                  <span className="block font-medium text-slate-900">Put items back in stock</span>
+                  <span className="text-xs text-slate-500">
+                    {order.status === "PAID"
+                      ? "The order hasn't shipped, so the items are still available."
+                      : "Only if the items came back in sellable condition."}
+                  </span>
+                </span>
+              </label>
+            </>
+          }
           confirmText="Refund"
           isLoading={busy === "refund"}
-          onConfirm={() => run("refund", () => refundOrder(order.id), `Order #${order.number} refunded`)}
+          onConfirm={() =>
+            run(
+              "refund",
+              () => refundOrder(order.id, restock),
+              `Order #${order.number} refunded${restock ? " and restocked" : ""}`
+            )
+          }
           onClose={() => setConfirm(null)}
         />
       )}

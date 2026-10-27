@@ -10,6 +10,8 @@ export type TCheckoutLine = {
   /** original price when the product is on sale */
   originalPriceCents: number | null;
   quantity: number;
+  /** units left in stock right now */
+  stock: number;
   isAvailable: boolean;
 };
 

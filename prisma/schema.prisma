@@ -72,7 +72,9 @@ enum OptionSetType {
 model Product {
   id              String      @id @default(cuid())
   name            String
+  /// kept equal to `stock > 0` by a database trigger; only write `stock`
   isAvailable     Boolean     @default(true)
+  stock           Int         @default(0)
   desc            String?
   specialFeatures String[]
   images          String[]

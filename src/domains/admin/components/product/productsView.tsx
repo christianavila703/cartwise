@@ -6,7 +6,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { deleteProduct, getAllProducts, setProductAvailability } from "@/actions/product/product";
+import { deleteProduct, getAllProducts } from "@/actions/product/product";
+import { LOW_STOCK_THRESHOLD } from "@/shared/constants/checkout";
 import { TAdminProduct } from "@/shared/types/admin";
 import { cn } from "@/shared/utils/styling";
 
@@ -15,13 +16,14 @@ import { Badge } from "../ui/badge";
 import { AdminButton } from "../ui/button";
 import { Card } from "../ui/card";
 import { AdminSelect, SearchInput } from "../ui/field";
-import { EmptyState, PageHeader, Skeleton, Toggle } from "../ui/misc";
+import { EmptyState, PageHeader, Skeleton } from "../ui/misc";
 import { ConfirmDialog } from "../ui/overlay";
 import { useToast } from "../ui/toast";
 
 import { ProductEditor } from "./productEditor";
+import { StockCell } from "./stockCell";
 
-type TStockFilter = "all" | "inStock" | "outOfStock" | "onSale";
+type TStockFilter = "all" | "inStock" | "lowStock" | "outOfStock" | "onSale";
 type TSort = "newest" | "oldest" | "name" | "priceAsc" | "priceDesc";
 type TEditorState = { mode: "new" } | { mode: "edit"; id: string } | null;
 
@@ -48,11 +50,14 @@ export const ProductsView = () => {
   const [products, setProducts] = useState<TAdminProduct[] | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [search, setSearch] = useState("");
-  const [stockFilter, setStockFilter] = useState<TStockFilter>("all");
+  // ?stock=low|out comes from the dashboard's catalog health links
+  const [stockFilter, setStockFilter] = useState<TStockFilter>(() => {
+    const stock = searchParams.get("stock");
+    return stock === "low" ? "lowStock" : stock === "out" ? "outOfStock" : "all";
+  });
   const [groupFilter, setGroupFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [sort, setSort] = useState<TSort>("newest");
-  const [togglingID, setTogglingID] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<TAdminProduct | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -93,8 +98,9 @@ export const ProductsView = () => {
     const list = products ?? [];
     return {
       all: list.length,
-      inStock: list.filter((product) => product.isAvailable).length,
-      outOfStock: list.filter((product) => !product.isAvailable).length,
+      inStock: list.filter((product) => product.stock > 0).length,
+      lowStock: list.filter((product) => product.stock > 0 && product.stock <= LOW_STOCK_THRESHOLD).length,
+      outOfStock: list.filter((product) => product.stock <= 0).length,
       onSale: list.filter((product) => product.salePrice !== null).length,
     };
   }, [products]);
@@ -105,8 +111,9 @@ export const ProductsView = () => {
       .filter((product) => {
         if (query && !`${product.name} ${product.brand.name} ${product.categoryPath}`.toLowerCase().includes(query))
           return false;
-        if (stockFilter === "inStock" && !product.isAvailable) return false;
-        if (stockFilter === "outOfStock" && product.isAvailable) return false;
+        if (stockFilter === "inStock" && product.stock <= 0) return false;
+        if (stockFilter === "lowStock" && (product.stock <= 0 || product.stock > LOW_STOCK_THRESHOLD)) return false;
+        if (stockFilter === "outOfStock" && product.stock > 0) return false;
         if (stockFilter === "onSale" && product.salePrice === null) return false;
         if (groupFilter && !product.categoryPath.startsWith(groupFilter)) return false;
         if (brandFilter && product.brand.id !== brandFilter) return false;
@@ -115,19 +122,10 @@ export const ProductsView = () => {
       .sort(sorters[sort]);
   }, [products, search, stockFilter, groupFilter, brandFilter, sort]);
 
-  const handleToggleStock = async (product: TAdminProduct, isAvailable: boolean) => {
-    setTogglingID(product.id);
-    // optimistic, rolled back if the save fails
-    setProducts((list) => list?.map((item) => (item.id === product.id ? { ...item, isAvailable } : item)) ?? null);
-    const response = await setProductAvailability(product.id, isAvailable);
-    setTogglingID(null);
-    if (response.error) {
-      setProducts((list) => list?.map((item) => (item.id === product.id ? { ...item, isAvailable: !isAvailable } : item)) ?? null);
-      toast.error(response.error);
-      return;
-    }
-    toast.success(`${product.name} is now ${isAvailable ? "in stock" : "out of stock"}`);
-  };
+  const updateStock = (id: string, stock: number) =>
+    setProducts(
+      (list) => list?.map((item) => (item.id === id ? { ...item, stock, isAvailable: stock > 0 } : item)) ?? null
+    );
 
   const handleDelete = async () => {
     if (!toDelete) return;
@@ -146,6 +144,7 @@ export const ProductsView = () => {
   const tabs: { key: TStockFilter; label: string }[] = [
     { key: "all", label: "All" },
     { key: "inStock", label: "In stock" },
+    { key: "lowStock", label: "Low stock" },
     { key: "outOfStock", label: "Out of stock" },
     { key: "onSale", label: "On sale" },
   ];
@@ -242,7 +241,7 @@ export const ProductsView = () => {
                   <th className="px-5 py-3 font-medium">Product</th>
                   <th className="px-3 py-3 font-medium">Brand</th>
                   <th className="px-3 py-3 font-medium">Price</th>
-                  <th className="px-3 py-3 font-medium">In stock</th>
+                  <th className="px-3 py-3 font-medium">Stock</th>
                   <th className="px-3 py-3 font-medium">Updated</th>
                   <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
@@ -293,11 +292,12 @@ export const ProductsView = () => {
                         )}
                       </td>
                       <td className="px-3 py-3">
-                        <Toggle
-                          label={`${product.name} in stock`}
-                          checked={product.isAvailable}
-                          disabled={togglingID === product.id}
-                          onChange={(isAvailable) => handleToggleStock(product, isAvailable)}
+                        <StockCell
+                          key={product.stock}
+                          productID={product.id}
+                          productName={product.name}
+                          stock={product.stock}
+                          onSaved={(stock) => updateStock(product.id, stock)}
                         />
                       </td>
                       <td className="px-3 py-3 text-xs whitespace-nowrap text-slate-500">
