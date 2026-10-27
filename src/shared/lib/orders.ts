@@ -4,15 +4,18 @@ import { Prisma } from "@prisma/client";
 
 import { MAX_QUANTITY_PER_ITEM, shippingForSubtotal, toCents } from "@/shared/constants/checkout";
 import { db } from "@/shared/lib/db";
-import { getStripe } from "@/shared/lib/stripe";
+import { releaseStock } from "@/shared/lib/stock";
+import { getStripe, isStripeConfigured } from "@/shared/lib/stripe";
 import { TCheckoutPreview, TOrderSummary } from "@/shared/types/checkout";
 import { TCartItem } from "@/shared/types/shoppingCart";
 
 /**
  * Prices a cart from the database. The browser only says which products and how many;
  * prices and availability always come from here.
+ * With `customerID`, units that customer holds in their own unpaid checkouts count as available to them,
+ * because starting a new checkout releases those first.
  */
-export const priceCart = async (items: TCartItem[]): Promise<TCheckoutPreview> => {
+export const priceCart = async (items: TCartItem[], customerID?: string): Promise<TCheckoutPreview> => {
   // merge duplicate lines and clamp quantities
   const quantities = new Map<string, number>();
   items.forEach(({ productId, quantity }) => {
@@ -25,9 +28,19 @@ export const priceCart = async (items: TCartItem[]): Promise<TCheckoutPreview> =
   const products = productIDs.length
     ? await db.product.findMany({
         where: { id: { in: productIDs } },
-        select: { id: true, name: true, images: true, price: true, salePrice: true, isAvailable: true },
+        select: { id: true, name: true, images: true, price: true, salePrice: true, stock: true },
       })
     : [];
+
+  const ownReservations = customerID
+    ? await db.orderItem.groupBy({
+        by: ["productId"],
+        where: { productId: { in: productIDs }, order: { userId: customerID, status: "PENDING" } },
+        _sum: { quantity: true },
+      })
+    : [];
+  const reservedByCustomer = (id: string) =>
+    ownReservations.find((row) => row.productId === id)?._sum.quantity ?? 0;
 
   const lines = productIDs.flatMap((id) => {
     const product = products.find((item) => item.id === id);
@@ -41,7 +54,8 @@ export const priceCart = async (items: TCartItem[]): Promise<TCheckoutPreview> =
         unitPriceCents: toCents(hasSale ? product.salePrice! : product.price),
         originalPriceCents: hasSale ? toCents(product.price) : null,
         quantity: quantities.get(id)!,
-        isAvailable: product.isAvailable,
+        stock: product.stock + reservedByCustomer(id),
+        isAvailable: product.stock + reservedByCustomer(id) > 0,
       },
     ];
   });
@@ -68,12 +82,73 @@ export const markOrderPaid = async (stripeSessionId: string, paymentIntentId: st
   });
 };
 
-/** Cancels an order that was never paid. Paid orders are left untouched. */
+/**
+ * Cancels an unpaid order and returns its reserved stock. The status change and the restock happen
+ * together and only once, so retries (webhook + success page + cleanup) never restock twice.
+ */
+const cancelPendingOrder = async (orderID: string) =>
+  db.$transaction(
+    async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: { id: orderID, status: "PENDING" },
+        data: { status: "CANCELLED", cancelledAt: new Date() },
+      });
+      if (count === 0) return false;
+      const items = await tx.orderItem.findMany({ where: { orderId: orderID }, select: { productId: true, quantity: true } });
+      await releaseStock(tx, items);
+      return true;
+    },
+    { maxWait: 10_000, timeout: 30_000 }
+  );
+
+/** Cancels orders that were never paid and releases their stock. Paid orders are left untouched. */
 export const markOrderCancelled = async (where: Prisma.OrderWhereInput) => {
-  await db.order.updateMany({
-    where: { ...where, status: "PENDING" },
-    data: { status: "CANCELLED", cancelledAt: new Date() },
+  const orders = await db.order.findMany({ where: { ...where, status: "PENDING" }, select: { id: true } });
+  for (const order of orders) await cancelPendingOrder(order.id);
+};
+
+// Stripe Checkout sessions expire after 30 minutes; after that an unpaid order can never be paid
+const STALE_PENDING_MS = 35 * 60 * 1000;
+
+/** Settles one unpaid checkout: marks it paid if Stripe says so, otherwise closes it and releases its stock. */
+const settleCheckout = async (order: { id: string; stripeSessionId: string | null }) => {
+  if (order.stripeSessionId && isStripeConfigured()) {
+    const state = await syncOrderWithStripe(order.stripeSessionId);
+    if (state === "paid") return;
+    if (state === "unpaid") await getStripe().checkout.sessions.expire(order.stripeSessionId).catch(() => {});
+  }
+  await cancelPendingOrder(order.id);
+};
+
+/**
+ * A customer can only pay for one checkout at a time, so starting a new one settles their earlier unpaid
+ * checkouts (e.g. after leaving Stripe with the browser's back button) and frees the stock they held.
+ */
+export const settleCustomerCheckouts = async (userID: string) => {
+  const open = await db.order.findMany({
+    where: { userId: userID, status: "PENDING" },
+    select: { id: true, stripeSessionId: true },
   });
+  for (const order of open) await settleCheckout(order);
+};
+
+/**
+ * Settles unpaid checkouts older than their payment page: paid ones are marked paid, the rest are
+ * cancelled so their reserved stock is sold again. Covers environments without the Stripe webhook.
+ */
+export const settleStaleCheckouts = async () => {
+  const stale = await db.order.findMany({
+    where: { status: "PENDING", createdAt: { lt: new Date(Date.now() - STALE_PENDING_MS) } },
+    select: { id: true, stripeSessionId: true },
+    take: 20,
+  });
+  for (const order of stale) {
+    try {
+      await settleCheckout(order);
+    } catch {
+      // try again on the next run
+    }
+  }
 };
 
 /**

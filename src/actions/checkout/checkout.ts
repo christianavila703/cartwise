@@ -8,7 +8,14 @@ import { CURRENCY, MAX_QUANTITY_PER_ITEM, SHIPPING_COUNTRIES } from "@/shared/co
 import { IMAGE_BASE_URL } from "@/shared/constants/store";
 import { getSession } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
-import { markOrderCancelled, priceCart, syncOrderWithStripe } from "@/shared/lib/orders";
+import {
+  markOrderCancelled,
+  priceCart,
+  settleCustomerCheckouts,
+  settleStaleCheckouts,
+  syncOrderWithStripe,
+} from "@/shared/lib/orders";
+import { OutOfStockError, reserveStock } from "@/shared/lib/stock";
 import { getStripe, isStripeConfigured } from "@/shared/lib/stripe";
 import { TCheckoutRequest } from "@/shared/types/checkout";
 import { TCartItem } from "@/shared/types/shoppingCart";
@@ -47,7 +54,8 @@ export const getCheckoutPreview = async (items: TCartItem[]) => {
   const parsed = CartItems.safeParse(items);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   try {
-    return { res: await priceCart(parsed.data) };
+    const session = await getSession();
+    return { res: await priceCart(parsed.data, session?.user?.id) };
   } catch {
     return { error: "Can't load your cart" };
   }
@@ -81,48 +89,63 @@ export const createCheckout = async (request: TCheckoutRequest) => {
   const parsed = CheckoutRequest.safeParse(request);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { items, address } = parsed.data;
+  const userId = session.user.id;
+  const email = session.user.email;
 
   let orderID: string | null = null;
   try {
+    // abandoned checkouts hold stock; settle them first so their units can be sold again
+    await settleCustomerCheckouts(userId);
+    await settleStaleCheckouts();
+
     const preview = await priceCart(items);
     const unavailable = preview.lines.filter((line) => !line.isAvailable);
+    const tooMany = preview.lines.find((line) => line.isAvailable && line.quantity > line.stock);
     if (preview.missingProductIDs.length) return { error: "Some products in your cart no longer exist" };
     if (unavailable.length) return { error: `${unavailable[0].name} is out of stock` };
+    if (tooMany) return { error: `Only ${tooMany.stock} left of ${tooMany.name}` };
     if (!preview.lines.length) return { error: "Your cart is empty" };
 
-    const order = await db.order.create({
-      data: {
-        userId: session.user.id,
-        email: session.user.email,
-        subtotalCents: preview.subtotalCents,
-        shippingCents: preview.shippingCents,
-        totalCents: preview.totalCents,
-        currency: CURRENCY,
-        shippingName: address.name,
-        shippingPhone: address.phone || null,
-        shippingLine1: address.line1,
-        shippingLine2: address.line2 || null,
-        shippingCity: address.city,
-        shippingPostalCode: address.postalCode,
-        shippingCountry: address.country,
-        items: {
-          create: preview.lines.map((line) => ({
-            productId: line.productId,
-            name: line.name,
-            image: line.image,
-            unitPriceCents: line.unitPriceCents,
-            quantity: line.quantity,
-          })),
-        },
+    // the stock is taken in the same transaction that creates the order, so it's never lost or doubled
+    const order = await db.$transaction(
+      async (tx) => {
+        await reserveStock(tx, preview.lines);
+        return tx.order.create({
+          data: {
+            userId,
+            email,
+            subtotalCents: preview.subtotalCents,
+            shippingCents: preview.shippingCents,
+            totalCents: preview.totalCents,
+            currency: CURRENCY,
+            shippingName: address.name,
+            shippingPhone: address.phone || null,
+            shippingLine1: address.line1,
+            shippingLine2: address.line2 || null,
+            shippingCity: address.city,
+            shippingPostalCode: address.postalCode,
+            shippingCountry: address.country,
+            items: {
+              create: preview.lines.map((line) => ({
+                productId: line.productId,
+                name: line.name,
+                image: line.image,
+                unitPriceCents: line.unitPriceCents,
+                quantity: line.quantity,
+              })),
+            },
+          },
+          select: { id: true, number: true },
+        });
       },
-      select: { id: true, number: true },
-    });
+      { maxWait: 10_000, timeout: 30_000 }
+    );
     orderID = order.id;
 
     const origin = await getOrigin();
     const checkoutSession = await getStripe().checkout.sessions.create({
       mode: "payment",
-      customer_email: session.user.email,
+      customer_email: email,
       client_reference_id: order.id,
       metadata: { orderId: order.id, orderNumber: String(order.number) },
       line_items: preview.lines.map((line) => ({
@@ -156,6 +179,8 @@ export const createCheckout = async (request: TCheckoutRequest) => {
     if (!checkoutSession.url) throw new Error("Stripe did not return a checkout URL");
     return { res: { url: checkoutSession.url } };
   } catch (error) {
+    if (error instanceof OutOfStockError) return { error: error.message };
+    // releases the stock reserved for the order
     if (orderID) await markOrderCancelled({ id: orderID }).catch(() => {});
     if (error instanceof Stripe.errors.StripeAuthenticationError) {
       return { error: "Payments are misconfigured (invalid Stripe key)" };

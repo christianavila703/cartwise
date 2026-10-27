@@ -68,11 +68,18 @@ const AdminDashboard = async () => {
   const averageOrder = sales.ordersLast30Days ? Math.round(sales.revenueLast30Days / sales.ordersLast30Days) : 0;
   const productsLabel = (count: number, single: string, plural: string) =>
     count === 1 ? `product ${single}` : `products ${plural}`;
-  const healthIssues = [
+  const healthIssues: { count: number; label: string; tone: "warning" | "danger"; href?: string }[] = [
     {
       count: catalog.outOfStock,
       label: productsLabel(catalog.outOfStock, "is out of stock", "are out of stock"),
+      tone: "danger" as const,
+      href: "/admin/products?stock=out",
+    },
+    {
+      count: catalog.lowStock,
+      label: productsLabel(catalog.lowStock, "is running low on stock", "are running low on stock"),
       tone: "warning" as const,
+      href: "/admin/products?stock=low",
     },
     {
       count: health.missingImages,
@@ -323,7 +330,7 @@ const AdminDashboard = async () => {
                 {healthIssues.map((issue) => (
                   <li key={issue.label}>
                     <Link
-                      href="/admin/products"
+                      href={issue.href ?? "/admin/products"}
                       className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-slate-50"
                     >
                       <span

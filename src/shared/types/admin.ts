@@ -28,6 +28,7 @@ export type TDashboardData = {
     products: number;
     inStock: number;
     outOfStock: number;
+    lowStock: number;
     onSale: number;
     categories: number;
     brands: number;
@@ -65,6 +66,7 @@ export type TAdminProduct = {
   price: number;
   salePrice: number | null;
   isAvailable: boolean;
+  stock: number;
   createdAt: Date;
   updatedAt: Date;
   brand: { id: string; name: string };

@@ -48,11 +48,12 @@
 
 - Order list with revenue, refunds and orders waiting to ship, status tabs, search and date filters.
 - Order details with a progress timeline, customer, shipping address and a link to the payment in Stripe.
-- Mark orders as shipped (carrier and tracking number) and delivered, cancel unpaid orders and refund paid ones through Stripe.
+- Mark orders as shipped (carrier and tracking number) and delivered, cancel unpaid orders and refund paid ones through Stripe, optionally putting the items back in stock.
 
 #### 📦 Products
 
-- Searchable, filterable and sortable product table with images, prices, discounts and an inline in-stock switch.
+- Searchable, filterable and sortable product table with images, prices, discounts and inline stock editing.
+- Stock tracking with low-stock and out-of-stock filters and dashboard warnings.
 - Add and **edit** products in a side drawer: details, highlights, pricing with discount preview, category, brand and specifications.
 - Image management: drag-and-drop upload straight to Cloudinary (server-signed), reorder, set the cover image or add an existing path.
 - Server-side validation with clear error messages.
@@ -85,6 +86,8 @@
 - Checkout with shipping details and a live order summary priced on the server.
 - Secure payment with Stripe Checkout; free shipping over €100.
 - Orders are stored with a snapshot of each product, and confirmed by the success page and a Stripe webhook.
+- Stock is reserved when checkout starts (atomically, so the last unit can't be sold twice) and released when a checkout is cancelled or expires.
+- "Only N left" on product pages, and quantities capped by what's in stock.
 
 #### 👤 Accounts
 
@@ -108,6 +111,13 @@
 - Shopping cart management with **Redux**.
 - Product gallery to showcase items attractively.
 - Categories loaded dynamically from the database.
+
+#### 🔎 Search
+
+- Search-as-you-type in the navbar with product images, prices, matching categories and recent searches, fully keyboard accessible.
+- Multi-word matching across product names, brands, categories and descriptions, ranked by relevance.
+- Typo tolerance ("Did you mean…?") using PostgreSQL trigram similarity (`pg_trgm`).
+- Server-rendered results page with sorting and an in-stock filter.
 
 #### 🔍 Filter and Sort
 

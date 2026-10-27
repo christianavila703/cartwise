@@ -7,7 +7,8 @@ import { z } from "zod";
 import { REFUNDABLE_STATUSES } from "@/shared/constants/orders";
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
-import { getOrderSummary } from "@/shared/lib/orders";
+import { getOrderSummary, markOrderCancelled, settleStaleCheckouts } from "@/shared/lib/orders";
+import { releaseStock } from "@/shared/lib/stock";
 import { getStripe, isStripeConfigured } from "@/shared/lib/stripe";
 import { TAdminOrder, TAdminOrderDetail } from "@/shared/types/admin";
 
@@ -15,6 +16,8 @@ export const getAdminOrders = async () => {
   if (!(await isAdmin())) return UNAUTHORIZED;
 
   try {
+    // abandoned checkouts are settled first, so the list shows their real state
+    await settleStaleCheckouts().catch(() => {});
     const orders = await db.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 500,
@@ -157,15 +160,19 @@ export const cancelUnpaidOrder = async (id: string) => {
         .checkout.sessions.expire(order.stripeSessionId)
         .catch(() => {});
     }
-    const updated = await transition(id, ["PENDING"], { status: "CANCELLED", cancelledAt: new Date() });
-    return updated ? { res: true } : { error: "The order changed, please reload" };
+    // cancels and releases the reserved stock in one step
+    await markOrderCancelled({ id });
+    return { res: true };
   } catch {
     return { error: "Can't cancel the order" };
   }
 };
 
-/** Refunds the full payment through Stripe and marks the order refunded. */
-export const refundOrder = async (id: string) => {
+/**
+ * Refunds the full payment through Stripe and marks the order refunded.
+ * `restock` puts the items back into stock (e.g. returned unopened); leave it off for lost or damaged goods.
+ */
+export const refundOrder = async (id: string, restock: boolean) => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   if (!id) return { error: "Invalid Data!" };
   if (!isStripeConfigured()) return { error: "Stripe is not configured" };
@@ -185,7 +192,20 @@ export const refundOrder = async (id: string) => {
       // already refunded in the Stripe dashboard: just record it
       if (!(error instanceof Stripe.errors.StripeError && error.code === "charge_already_refunded")) throw error;
     }
-    await transition(id, REFUNDABLE_STATUSES, { status: "REFUNDED", refundedAt: new Date() });
+    // status and restock change together, so a retried refund can't restock twice
+    await db.$transaction(
+      async (tx) => {
+        const { count } = await tx.order.updateMany({
+          where: { id, status: { in: REFUNDABLE_STATUSES } },
+          data: { status: "REFUNDED", refundedAt: new Date() },
+        });
+        if (count === 1 && restock) {
+          const items = await tx.orderItem.findMany({ where: { orderId: id }, select: { productId: true, quantity: true } });
+          await releaseStock(tx, items);
+        }
+      },
+      { maxWait: 10_000, timeout: 30_000 }
+    );
     return { res: true };
   } catch (error) {
     if (error instanceof Stripe.errors.StripeError) return { error: `Stripe: ${error.message}` };

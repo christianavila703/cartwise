@@ -72,7 +72,9 @@ enum OptionSetType {
 model Product {
   id              String      @id @default(cuid())
   name            String
+  /// kept equal to `stock > 0` by a database trigger; only write `stock`
   isAvailable     Boolean     @default(true)
+  stock           Int         @default(0)
   desc            String?
   specialFeatures String[]
   images          String[]
@@ -92,6 +94,8 @@ model Product {
 
   @@index([categoryID])
   @@index([brandID])
+  // trigram index for search: speeds up substring matching and powers "did you mean" suggestions
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Brand {

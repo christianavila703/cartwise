@@ -2,25 +2,28 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 
 import { FavoriteToggle } from "@/domains/store/favorites/components/FavoriteToggle";
 import AddToCartButton from "@/domains/store/shoppingCard/components/addToCartButton";
 import Quantity from "@/domains/store/shoppingCard/components/quantity";
 import { StarIcon } from "@/shared/components/icons/svgIcons";
+import { LOW_STOCK_THRESHOLD, maxOrderQuantity } from "@/shared/constants/checkout";
 import { TProductBoard } from "@/shared/types/product";
 import { TCartItem } from "@/shared/types/shoppingCart";
+import { cn } from "@/shared/utils/styling";
+import { RootState } from "@/store/shoppingCart";
 
 const ProductBoard = ({ boardData }: { boardData: TProductBoard }) => {
-  const { name, id, isAvailable, specialFeatures, price, shortDesc, dealPrice, defaultQuantity } = boardData;
-  const [quantity, setQuantity] = useState(defaultQuantity > 1 ? defaultQuantity : 1);
+  const { name, id, isAvailable, stock, specialFeatures, price, shortDesc, dealPrice, defaultQuantity } = boardData;
+  const inCart = useSelector((state: RootState) => state.cart.items.find((item) => item.productId === id)?.quantity ?? 0);
+  // what can still be added: the stock (capped per order) minus what's already in the cart
+  const addable = Math.max(0, maxOrderQuantity(stock) - inCart);
+  const [requested, setRequested] = useState(defaultQuantity > 1 ? defaultQuantity : 1);
+  const quantity = Math.max(1, Math.min(requested, addable));
 
   const handleQuantityChange = (isReducing: boolean) => {
-    setQuantity((prev) => {
-      if (isReducing) {
-        return prev > 1 ? prev - 1 : 1;
-      }
-      return prev + 1;
-    });
+    setRequested(isReducing ? Math.max(1, quantity - 1) : Math.min(addable, quantity + 1));
   };
 
   const cartItemData: TCartItem = {
@@ -74,10 +77,30 @@ const ProductBoard = ({ boardData }: { boardData: TProductBoard }) => {
       )}
       <hr className="w-full border-t border-gray-300 mb-5" />
 
+      <p
+        className={cn(
+          "mb-5 flex items-center gap-2 text-sm font-medium",
+          !isAvailable ? "text-red-600" : stock <= LOW_STOCK_THRESHOLD ? "text-amber-700" : "text-emerald-700"
+        )}
+      >
+        <span
+          className={cn(
+            "size-2 rounded-full",
+            !isAvailable ? "bg-red-500" : stock <= LOW_STOCK_THRESHOLD ? "bg-amber-500" : "bg-emerald-500"
+          )}
+        />
+        {!isAvailable ? "Out of stock" : stock <= LOW_STOCK_THRESHOLD ? `Only ${stock} left — order soon` : "In stock"}
+        {isAvailable && inCart > 0 && <span className="font-normal text-gray-500">· {inCart} in your cart</span>}
+      </p>
+
       {/* ----------------- ADD TO CART SECTION ----------------- */}
       <section className="flex items-center w-full">
-        <Quantity onChange={handleQuantityChange} quantity={quantity} />
-        <AddToCartButton cartItemData={cartItemData} disabled={!isAvailable} />
+        <Quantity onChange={handleQuantityChange} quantity={quantity} max={addable} />
+        <AddToCartButton
+          cartItemData={cartItemData}
+          disabled={!isAvailable || addable === 0}
+          disabledLabel={!isAvailable ? "Out of stock" : "All available units are in your cart"}
+        />
       </section>
     </div>
   );

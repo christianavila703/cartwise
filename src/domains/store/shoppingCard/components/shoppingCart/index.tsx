@@ -37,6 +37,7 @@ const ShoppingCart = ({ isVisible, quantity, handleOnClose }: TProps) => {
           quantity: localCartItems.items.find((f) => f.productId === item.id)?.quantity || 0,
           productName: item.name,
           dealPrice: item.salePrice || undefined,
+          stock: item.stock,
         });
       });
       if (cartListItem.length > 0) return cartListItem;

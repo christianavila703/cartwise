@@ -35,9 +35,11 @@ const Footer = () => {
           <Link href={"/"}>
             <Image alt="Cartwise Logo" src={"/images/logo.webp"} width={120} height={40} />
           </Link>
-          <div className="h-11 w-full relative ml-16">
+          <form action="/search" role="search" className="h-11 w-full relative ml-16">
             <input
-              type="text"
+              type="search"
+              name="q"
+              aria-label="Search products"
               className="w-full h-full rounded-lg text-gray-700 border border-gray-300 pl-12 focus:border-gray-600"
               placeholder="Search"
             />
@@ -45,10 +47,10 @@ const Footer = () => {
               src="/icons/searchIcon.svg"
               width={16}
               height={16}
-              alt="Search"
+              alt=""
               className="absolute top-3.5 left-5 hidden sm:block"
             />
-          </div>
+          </form>
         </div>
         <section className="flex flex-col lg:flex-row items-start justify-between">
           <div>

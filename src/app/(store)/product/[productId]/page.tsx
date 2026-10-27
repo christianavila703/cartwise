@@ -64,6 +64,7 @@ const ProductPage = () => {
                 boardData={{
                   id: productInfo.id,
                   isAvailable: productInfo.isAvailable,
+                  stock: productInfo.stock,
                   defaultQuantity: 1,
                   name: productInfo.name,
                   price: productInfo.price,

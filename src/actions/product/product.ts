@@ -29,7 +29,11 @@ const ValidateProduct = z
     categoryID: z.string().min(1, "Select a category"),
     price: priceString.refine((value) => value !== "" && Number(value) > 0, "Price is required"),
     salePrice: priceString.optional(),
-    isAvailable: z.boolean(),
+    stock: z
+      .string()
+      .trim()
+      .regex(/^\d+$/, "Stock must be a whole number")
+      .refine((value) => Number(value) <= 100_000, "Stock is too large"),
     specifications: z.array(
       z.object({
         specGroupID: z.string().min(1),
@@ -48,7 +52,8 @@ const toProductData = (data: z.infer<typeof ValidateProduct>) => ({
   brandID: data.brandID,
   categoryID: data.categoryID,
   specialFeatures: data.specialFeatures.filter((feature) => feature !== ""),
-  isAvailable: data.isAvailable,
+  // availability follows from the stock (kept in sync by a database trigger)
+  stock: Number(data.stock),
   price: Number(data.price),
   salePrice: data.salePrice ? Number(data.salePrice) : null,
   images: data.images,
@@ -84,12 +89,16 @@ export const updateProduct = async (id: string, data: TAddProductFormValues) => 
   }
 };
 
-export const setProductAvailability = async (id: string, isAvailable: boolean) => {
+export const setProductStock = async (id: string, stock: number) => {
   if (!(await isAdmin())) return UNAUTHORIZED;
-  if (!id) return { error: "Invalid Data!" };
+  if (!id || !Number.isInteger(stock) || stock < 0 || stock > 100_000) return { error: "Invalid stock quantity" };
 
   try {
-    const result = await db.product.update({ where: { id }, data: { isAvailable }, select: { id: true } });
+    const result = await db.product.update({
+      where: { id },
+      data: { stock },
+      select: { id: true, stock: true, isAvailable: true },
+    });
     return { res: result };
   } catch {
     return { error: "Can't update the product" };
@@ -110,7 +119,7 @@ export const getProductForEdit = async (id: string) => {
       desc: product.desc ?? "",
       brandID: product.brandID,
       categoryID: product.categoryID,
-      isAvailable: product.isAvailable,
+      stock: String(product.stock),
       price: String(product.price),
       salePrice: product.salePrice !== null ? String(product.salePrice) : "",
       images: product.images,
@@ -136,6 +145,7 @@ export const getAllProducts = async () => {
           price: true,
           salePrice: true,
           isAvailable: true,
+          stock: true,
           createdAt: true,
           updatedAt: true,
           brand: { select: { id: true, name: true } },
@@ -184,6 +194,7 @@ export const getOneProduct = async (productID: string) => {
         specs: true,
         specialFeatures: true,
         isAvailable: true,
+        stock: true,
         optionSets: true,
         category: {
           select: {
@@ -229,6 +240,7 @@ export const getCartProducts = async (productIDs: string[]) => {
         images: true,
         price: true,
         salePrice: true,
+        stock: true,
       },
     });
 

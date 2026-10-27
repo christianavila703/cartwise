@@ -31,6 +31,7 @@ export type TProductBoard = {
   id: string;
   name: string;
   isAvailable: boolean;
+  stock: number;
   shortDesc: string;
   price: number;
   dealDate?: Date;
@@ -55,7 +56,8 @@ export type TProduct = {
 
 export type TAddProductFormValues = {
   name: string;
-  isAvailable: boolean;
+  /** units in stock, as typed in the form */
+  stock: string;
   specialFeatures: string[];
   brandID: string;
   desc?: string;
@@ -80,6 +82,7 @@ export type TCartListItemDB = {
   images: string[];
   price: number;
   salePrice: number | null;
+  stock: number;
 };
 
 export type TSpecification = {
@@ -101,6 +104,7 @@ export type TProductPageInfo = {
   id: string;
   name: string;
   isAvailable: boolean;
+  stock: number;
   desc: string | null;
   images: string[];
   optionSets: string[];
