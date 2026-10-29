@@ -1,5 +1,6 @@
 "use client";
 
+import { Minus, Plus, ThumbsDown, ThumbsUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -10,7 +11,6 @@ import Gallery from "@/domains/product/components/gallery";
 import ProductBoard from "@/domains/product/components/productBoard";
 import ProductCard from "@/domains/product/components/productCard";
 import { TopProducts } from "@/domains/product/constants";
-import { LikeIcon, MinusIcon } from "@/shared/components/icons/svgIcons";
 import { SK_Box } from "@/shared/components/UI/skeleton";
 import { TProductPageInfo } from "@/shared/types/product";
 
@@ -18,6 +18,18 @@ const ProductPage = () => {
   const router = useRouter();
   const { productId } = useParams<{ productId: string[] }>();
   const [productInfo, setProductInfo] = useState<TProductPageInfo | null | undefined>(null);
+  // specification groups the visitor collapsed, remembered per product so they reset on the next one
+  const [collapsedState, setCollapsedState] = useState<{ productId: string; groups: number[] }>({
+    productId: "",
+    groups: [],
+  });
+  const currentProductId = String(productId);
+  const collapsedSpecs = collapsedState.productId === currentProductId ? collapsedState.groups : [];
+  const toggleSpecGroup = (group: number) =>
+    setCollapsedState({
+      productId: currentProductId,
+      groups: collapsedSpecs.includes(group) ? collapsedSpecs.filter((item) => item !== group) : [...collapsedSpecs, group],
+    });
   if (!productId) router.push("/");
 
   useEffect(() => {
@@ -98,14 +110,30 @@ const ProductPage = () => {
             <div className="w-full mb-[100px]">
               <h2 className="font-light block text-2xl text-gray-900 py-5 border-b border-gray-300">Specification</h2>
               {productInfo ? (
-                productInfo.specifications.map((spec, index) => (
+                productInfo.specifications.map((spec, index) => {
+                  const isOpen = !collapsedSpecs.includes(index);
+                  return (
                   <section key={index} className="w-full py-5 border-b border-gray-300">
-                    <div className="flex items-center w-full">
-                      <button className="size-8 inline-block relative border-none bg-white rounded-sm hover:bg-gray-200">
-                        <MinusIcon width={12} className="absolute top-3.5 left-2.5 stroke-gray-700" />
+                    <h3>
+                      <button
+                        type="button"
+                        aria-expanded={isOpen}
+                        aria-controls={`spec-group-${index}`}
+                        onClick={() => toggleSpecGroup(index)}
+                        className="group flex w-full cursor-pointer items-center gap-3 rounded-md text-left text-gray-700 hover:text-gray-900"
+                      >
+                        <span className="flex size-8 items-center justify-center rounded-md transition-colors group-hover:bg-gray-100">
+                          {isOpen ? (
+                            <Minus className="size-4 text-gray-500" />
+                          ) : (
+                            <Plus className="size-4 text-gray-500" />
+                          )}
+                        </span>
+                        {spec.groupName}
+                        {!isOpen && <span className="text-xs text-gray-400">{spec.specs.length} specs</span>}
                       </button>
-                      <h3 className="ml-3 inline-block text-gray-700">{spec.groupName}</h3>
-                    </div>
+                    </h3>
+                    <div id={`spec-group-${index}`} hidden={!isOpen}>
                     {spec.specs.map((row, index) => (
                       <div
                         key={index}
@@ -121,8 +149,10 @@ const ProductPage = () => {
                         </div>
                       </div>
                     ))}
+                    </div>
                   </section>
-                ))
+                  );
+                })
               ) : (
                 <>
                   <div className="flex flex-col mt-4 mb-16 gap-4">
@@ -177,11 +207,19 @@ const ProductPage = () => {
                       30 November 2023
                     </div>
                     <div className="ml-10 inline-block">
-                      <button className="h-8 mr-3 font-medium px-3 bg-white border border-white rounded-md text-gray-900 hover:border-green-600 hover:bg-green-800 hover:[&>svg]:fill-green-700 active:border-green-500 active:[&>svg]:fill-green-600">
-                        <LikeIcon width={16} className="fill-white stroke-gray-1000 mr-2" />0
+                      <button
+                        type="button"
+                        aria-label="Helpful"
+                        className="mr-2 inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 font-medium text-gray-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        <ThumbsUp className="size-4" /> 0
                       </button>
-                      <button className="h-8 mr-3 font-medium px-3 bg-white border border-white rounded-md text-gray-900 hover:border-red-700 hover:bg-[rgba(220,38,38,0.4)] hover:[&>svg]:fill-red-800 active:border-red-500 active:[&>svg]:fill-red-700 [&>svg]:inline-block [&>svg]:[-scale-x-100] [&>svg]:rotate-180 [&>svg]:-translate-y-[3px]">
-                        <LikeIcon width={16} className="fill-white stroke-gray-1000 mr-2" /> 0
+                      <button
+                        type="button"
+                        aria-label="Not helpful"
+                        className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 font-medium text-gray-600 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <ThumbsDown className="size-4" /> 0
                       </button>
                     </div>
                   </div>
