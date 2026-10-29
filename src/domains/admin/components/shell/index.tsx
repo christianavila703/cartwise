@@ -123,17 +123,6 @@ const SidebarContent = ({ pathname, onNavigate }: { pathname: string; onNavigate
         </div>
       ))}
     </nav>
-    <div className="m-3 rounded-2xl border border-white/10 bg-gradient-to-br from-brand-600/20 via-white/5 to-transparent p-4">
-      <p className="text-sm font-semibold text-white">Your storefront</p>
-      <p className="mt-1 text-xs leading-relaxed text-slate-400">See your changes the way customers do.</p>
-      <Link
-        href="/"
-        target="_blank"
-        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 transition-colors hover:text-brand-200"
-      >
-        Open store <ExternalLink className="size-3.5" />
-      </Link>
-    </div>
   </div>
 );
 
@@ -171,12 +160,6 @@ const UserMenu = ({ name, email }: { name: string; email: string }) => {
             <p className="truncate text-xs text-slate-500">{email}</p>
           </div>
           <div className="p-1.5">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
-            >
-              <ShoppingCart className="size-4 text-slate-400" /> Back to store
-            </Link>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -256,9 +239,11 @@ export const AdminShell = ({ user, children }: TProps) => {
               <Link
                 href="/"
                 target="_blank"
-                className="hidden h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-700 shadow-xs transition-colors hover:bg-slate-50 sm:inline-flex"
+                aria-label="View store"
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 text-sm font-medium text-slate-700 shadow-xs transition-colors hover:bg-slate-50 sm:px-3.5"
               >
-                <ExternalLink className="size-4 text-slate-400" /> View store
+                <ExternalLink className="size-4 text-slate-400" />
+                <span className="hidden sm:inline">View store</span>
               </Link>
               <UserMenu name={user.name} email={user.email} />
             </div>
