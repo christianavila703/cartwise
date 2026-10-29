@@ -4,6 +4,13 @@ import Link from "next/link";
 import { FacebookIcon, InstagramIcon, LinkedinIcon, XIcon } from "@/shared/components/icons/svgIcons";
 import Button from "@/shared/components/UI/button";
 
+// placeholder contact details: replace with the store's real ones before launch
+const CONTACT = {
+  phone: "+1 (555) 010-0000",
+  address: "123 Example Street, City, Country",
+  email: "support@example.com",
+};
+
 const CATEGORIES = [
   "Computer & Laptop",
   "Tablets & iPad",
@@ -56,11 +63,16 @@ const Footer = () => {
           <div>
             <h3 className="text-lg text-gray-900 font-medium mt-9 mb-4">Contact Us</h3>
             <span className="text-gray-500 block text-sm leading-5">Got Question? Call us 24/7</span>
-            <h2 className="text-blue-600 font-medium my-2">+49 30 575909881</h2>
-            <span className="text-gray-500 block text-sm leading-5">
-              685 Market Street, San Francisco, CA 94105, US
-            </span>
-            <span className="text-gray-500 block text-sm leading-5">nonamecompany@justportfolio.com</span>
+            <a
+              href={`tel:${CONTACT.phone.replace(/[^\d+]/g, "")}`}
+              className="block text-blue-600 font-medium my-2 hover:text-blue-700"
+            >
+              {CONTACT.phone}
+            </a>
+            <span className="text-gray-500 block text-sm leading-5">{CONTACT.address}</span>
+            <a href={`mailto:${CONTACT.email}`} className="text-gray-500 block text-sm leading-5 hover:text-gray-800">
+              {CONTACT.email}
+            </a>
           </div>
           <div>
             <h3 className="text-lg text-gray-900 font-medium mt-9 mb-4">Categories</h3>

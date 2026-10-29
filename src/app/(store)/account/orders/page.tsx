@@ -96,7 +96,12 @@ const MyOrdersPage = async ({ searchParams }: TProps) => {
         </div>
 
         {orders.length > 0 && (
-          <nav className="mt-6 flex gap-1 overflow-x-auto border-b border-gray-200" aria-label="Order status">
+          <nav
+            className="mt-6 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-gray-200)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Order status"
+          >
+            {/* the grey line is an inset shadow, so the active tab's underline covers it without overflowing
+                (a 1px overflow here showed a vertical scrollbar) */}
             {TABS.map((item) => {
               const count = inTab(item.key).length;
               const isActive = item.key === tab;
@@ -105,7 +110,7 @@ const MyOrdersPage = async ({ searchParams }: TProps) => {
                   key={item.key}
                   href={item.key === "all" ? "/account/orders" : `/account/orders?status=${item.key}`}
                   className={cn(
-                    "-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm whitespace-nowrap transition-colors",
+                    "flex items-center gap-2 border-b-2 px-4 py-3 text-sm whitespace-nowrap transition-colors",
                     isActive
                       ? "border-gray-900 font-medium text-gray-900"
                       : "border-transparent text-gray-500 hover:text-gray-800"
