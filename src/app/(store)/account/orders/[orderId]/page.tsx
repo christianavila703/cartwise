@@ -25,7 +25,7 @@ const OrderDetailPage = async ({ params }: TProps) => {
   if (!session?.user?.id) redirect(`/login?callbackUrl=/account/orders/${orderId}`);
 
   // scoped to the signed-in customer, so nobody can open someone else's order
-  const order = await getOrderSummary({ id: orderId, userId: session.user.id, status: { not: "PENDING" } });
+  const order = await getOrderSummary({ id: orderId, userId: session.user.id, paidAt: { not: null } });
   if (!order) notFound();
 
   const trackingLink = trackingUrl(order.trackingCarrier, order.trackingNumber);
