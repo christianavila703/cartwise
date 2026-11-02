@@ -1,24 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 import { useSelector } from "react-redux";
 
 import { HeartIcon } from "@/shared/components/icons/svgIcons";
 import { cn } from "@/shared/utils/styling";
 import type { RootState } from "@/store/shoppingCart";
 
-const subscribeNoop = () => () => {};
-
 const NavBarFavorite = () => {
-  const storedCount = useSelector((s: RootState) => s.favorites.ids.length);
-  // favorites are restored from localStorage, so only show the count after hydration (like the cart badge)
-  const isClient = useSyncExternalStore(
-    subscribeNoop,
-    () => true,
-    () => false
-  );
-  const count = isClient ? storedCount : 0;
+  // 0 until the saved favorites are restored after hydration, matching the server render
+  const count = useSelector((s: RootState) => s.favorites.ids.length);
 
   return (
     <Link

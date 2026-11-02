@@ -124,6 +124,12 @@
 - Filter products by price, brand, and availability.
 - Sort the product list by name and price.
 
+#### ⚡ Performance and SEO
+
+- Homepage, category and product pages are rendered on the server, so content is in the HTML for search engines and appears without loading spinners.
+- Per-product page titles, descriptions and social share images; unknown products and categories return a 404.
+- The category menu is cached across requests and refreshed instantly when an admin edits categories.
+
 #### ⚙️ Backend
 
 - PostgreSQL access through Prisma ORM, with versioned migrations.

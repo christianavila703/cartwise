@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { NavbarSearch } from "@/domains/store/search/components/navbarSearch";
+import { TGroupJSON } from "@/shared/types/categories";
 import { cn } from "@/shared/utils/styling";
 
 import AddVisit from "../addVisit";
@@ -25,7 +26,7 @@ const NAVBAR_ITEMS = [
   { name: "Watch", link: "/list/watches" },
 ];
 
-const StoreNavBar = () => {
+const StoreNavBar = ({ categories }: { categories: TGroupJSON[] }) => {
   const [hideNavbar, setHideNavbar] = useState(false);
 
   useEffect(() => {
@@ -79,7 +80,7 @@ const StoreNavBar = () => {
       <section className="w-full border-b-gray-400 mt-5 border-t-gray-300 border-b border-t">
         <div className="storeContainer h-[50px] flex justify-between">
           <div className="flex items-center">
-            <NavBarCategory isNavbarVisible={!hideNavbar} />
+            <NavBarCategory isNavbarVisible={!hideNavbar} categories={categories} />
             <hr className="h-4 border-l border-gray-300 mx-4 hidden sm:block" />
             <ul className="hidden lg:flex space-x-2">
               {NAVBAR_ITEMS.map(({ name, link }) => (

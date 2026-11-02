@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
-import { getAllCategoriesJSON } from "@/actions/category/category";
 import { ListIcon } from "@/shared/components/icons/svgIcons";
 import Button from "@/shared/components/UI/button";
 import { useToggleMenu } from "@/shared/hooks/useToggleMenu";
@@ -12,27 +11,18 @@ import { cn } from "@/shared/utils/styling";
 
 type TProps = {
   isNavbarVisible: boolean;
+  /** loaded on the server by the store layout */
+  categories: TGroupJSON[];
 };
 
-const NavBarCategory = ({ isNavbarVisible: isNavbarHide }: TProps) => {
+const NavBarCategory = ({ isNavbarVisible: isNavbarHide, categories }: TProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isActive, setIsActive] = useToggleMenu(false, dropdownRef);
-  const [categories, setCategories] = useState<TGroupJSON[]>([]);
 
   const toggleMenu = (event?: React.MouseEvent<HTMLButtonElement>) => {
     event?.stopPropagation();
     setIsActive(!isActive);
   };
-
-  useEffect(() => {
-    const getCategoriesDB = async () => {
-      const result = await getAllCategoriesJSON();
-      if (result.res) {
-        setCategories(result.res);
-      }
-    };
-    getCategoriesDB();
-  }, []);
 
   if (!isNavbarHide && isActive) setIsActive(false);
 
