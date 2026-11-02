@@ -1,19 +1,19 @@
-"use client";
-import { Provider } from "react-redux";
-
+import StoreFooter from "@/domains/store/shared/components/footer";
 import StoreNavBar from "@/domains/store/shared/components/navbar";
-import { shoppingCartStore } from "@/store/shoppingCart";
+import { StoreProviders } from "@/domains/store/shared/components/storeProviders";
+import { getStoreCategoriesSafe } from "@/shared/lib/storeData";
 
-import StoreFooter from "../../domains/store/shared/components/footer/index";
+const StoreLayout = async ({ children }: { children: React.ReactNode }) => {
+  // loaded on the server, so the category menu is in the HTML instead of loading after the page
+  const categories = await getStoreCategoriesSafe();
 
-const StoreLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="bg-gray-50">
-      <Provider store={shoppingCartStore}>
-        <StoreNavBar />
+      <StoreProviders>
+        <StoreNavBar categories={categories} />
         {children}
         <StoreFooter />
-      </Provider>
+      </StoreProviders>
     </main>
   );
 };

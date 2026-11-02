@@ -1,107 +1,85 @@
-"use client";
-
-import { Minus, Plus, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { notFound } from "next/navigation";
 
-import { getOneProduct } from "@/actions/product/product";
 import Gallery from "@/domains/product/components/gallery";
 import ProductBoard from "@/domains/product/components/productBoard";
 import ProductCard from "@/domains/product/components/productCard";
+import ProductSpecs from "@/domains/product/components/productSpecs";
 import { TopProducts } from "@/domains/product/constants";
-import { SK_Box } from "@/shared/components/UI/skeleton";
-import { TProductPageInfo } from "@/shared/types/product";
+import { IMAGE_BASE_URL } from "@/shared/constants/store";
+import { getProductPage } from "@/shared/lib/storeData";
 
-const ProductPage = () => {
-  const router = useRouter();
-  const { productId } = useParams<{ productId: string[] }>();
-  const [productInfo, setProductInfo] = useState<TProductPageInfo | null | undefined>(null);
-  // specification groups the visitor collapsed, remembered per product so they reset on the next one
-  const [collapsedState, setCollapsedState] = useState<{ productId: string; groups: number[] }>({
-    productId: "",
-    groups: [],
-  });
-  const currentProductId = String(productId);
-  const collapsedSpecs = collapsedState.productId === currentProductId ? collapsedState.groups : [];
-  const toggleSpecGroup = (group: number) =>
-    setCollapsedState({
-      productId: currentProductId,
-      groups: collapsedSpecs.includes(group) ? collapsedSpecs.filter((item) => item !== group) : [...collapsedSpecs, group],
-    });
-  if (!productId) router.push("/");
+type TProps = { params: Promise<{ productId: string }> };
 
-  useEffect(() => {
-    const getProductFromDB = async () => {
-      const response = await getOneProduct(productId.toString());
-      if (response.error) router.push("/");
-      setProductInfo(response.res);
-    };
-    getProductFromDB();
-  }, [productId, router]);
+// stock and prices change, so product pages are rendered per request
+export const dynamic = "force-dynamic";
 
-  if (productInfo === undefined) return "";
+export const generateMetadata = async ({ params }: TProps): Promise<Metadata> => {
+  const product = await getProductPage((await params).productId);
+  if (!product) return { title: "Product not found — Cartwise" };
+
+  const price = product.salePrice ?? product.price;
+  const description =
+    product.desc ||
+    `${product.name} for €${price.toFixed(2)} at Cartwise. ${product.specialFeatures.filter(Boolean).join(", ")}.`;
+  const image = product.images[0] ? IMAGE_BASE_URL + product.images[0] : undefined;
+
+  return {
+    title: `${product.name} — Cartwise`,
+    description,
+    openGraph: {
+      title: product.name,
+      description,
+      type: "website",
+      images: image && image.startsWith("http") ? [{ url: image, alt: product.name }] : undefined,
+    },
+  };
+};
+
+const ProductPage = async ({ params }: TProps) => {
+  const { productId } = await params;
+  const productInfo = await getProductPage(productId);
+  if (!productInfo) notFound();
 
   return (
     <div className="storeContainer">
       <div className="w-full h-auto mt-[160px] flex flex-col">
         <div className="w-full flex flex-col lg:flex-row gap-12">
           <div className="flex-grow">
-            <div className="block text-gray-700 w-full mb-10 text-sm">
-              {productInfo ? (
-                <>
-                  <Link href={"/"} className="hover:font-medium after:mx-1 after:content-['/'] hover:text-gray-800">
-                    Home
-                  </Link>
-                  {productInfo.path.map((item, index) => (
-                    <Link
-                      key={item.url + index}
-                      href={"/list/" + productInfo.path.slice(0, index + 1).map((pathItem) => pathItem.url).join("/")}
-                      className="after:content-['/'] last:after:content-[''] after:mx-1 hover:text-gray-800"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </>
-              ) : (
-                <SK_Box width="60%" height="15px" />
-              )}
-            </div>
-            <Gallery images={productInfo?.images} />
+            <nav aria-label="Breadcrumb" className="block text-gray-700 w-full mb-10 text-sm">
+              <Link href={"/"} className="hover:font-medium after:mx-1 after:content-['/'] hover:text-gray-800">
+                Home
+              </Link>
+              {productInfo.path.map((item, index) => (
+                <Link
+                  key={item.url + index}
+                  href={"/list/" + productInfo.path.slice(0, index + 1).map((pathItem) => pathItem.url).join("/")}
+                  className="after:content-['/'] last:after:content-[''] after:mx-1 hover:text-gray-800"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+            <Gallery images={productInfo.images} />
           </div>
           <div className="lg:w-[512px] w-full">
-            {productInfo ? (
-              <ProductBoard
-                boardData={{
-                  id: productInfo.id,
-                  isAvailable: productInfo.isAvailable,
-                  stock: productInfo.stock,
-                  defaultQuantity: 1,
-                  name: productInfo.name,
-                  price: productInfo.price,
-                  dealPrice: productInfo.salePrice || undefined,
-                  shortDesc: productInfo.desc || "",
-                  specialFeatures: productInfo.specialFeatures,
-                }}
-              />
-            ) : (
-              <div className="flex flex-col">
-                <SK_Box width="60%" height="14px" />
-                <div className="flex flex-col mt-10 gap-5">
-                  <SK_Box width="40%" height="30px" />
-                  <SK_Box width="90%" height="16px" />
-                </div>
-                <div className="flex flex-col gap-4 mt-10">
-                  <SK_Box width="40%" height="14px" />
-                  <SK_Box width="40%" height="14px" />
-                  <SK_Box width="40%" height="14px" />
-                </div>
-                <div className="flex flex-col gap-4 mt-16">
-                  <SK_Box width="30%" height="40px" />
-                </div>
-              </div>
-            )}
+            <ProductBoard
+              key={productInfo.id}
+              boardData={{
+                id: productInfo.id,
+                isAvailable: productInfo.isAvailable,
+                stock: productInfo.stock,
+                defaultQuantity: 1,
+                name: productInfo.name,
+                price: productInfo.price,
+                dealPrice: productInfo.salePrice || undefined,
+                shortDesc: productInfo.desc || "",
+                specialFeatures: productInfo.specialFeatures,
+              }}
+            />
           </div>
         </div>
         <div className="w-full h-auto flex gap-12 mt-10">
@@ -109,76 +87,8 @@ const ProductPage = () => {
             {/* ----------------- SPECIFICATION SECTION ----------------- */}
             <div className="w-full mb-[100px]">
               <h2 className="font-light block text-2xl text-gray-900 py-5 border-b border-gray-300">Specification</h2>
-              {productInfo ? (
-                productInfo.specifications.map((spec, index) => {
-                  const isOpen = !collapsedSpecs.includes(index);
-                  return (
-                  <section key={index} className="w-full py-5 border-b border-gray-300">
-                    <h3>
-                      <button
-                        type="button"
-                        aria-expanded={isOpen}
-                        aria-controls={`spec-group-${index}`}
-                        onClick={() => toggleSpecGroup(index)}
-                        className="group flex w-full cursor-pointer items-center gap-3 rounded-md text-left text-gray-700 hover:text-gray-900"
-                      >
-                        <span className="flex size-8 items-center justify-center rounded-md transition-colors group-hover:bg-gray-100">
-                          {isOpen ? (
-                            <Minus className="size-4 text-gray-500" />
-                          ) : (
-                            <Plus className="size-4 text-gray-500" />
-                          )}
-                        </span>
-                        {spec.groupName}
-                        {!isOpen && <span className="text-xs text-gray-400">{spec.specs.length} specs</span>}
-                      </button>
-                    </h3>
-                    <div id={`spec-group-${index}`} hidden={!isOpen}>
-                    {spec.specs.map((row, index) => (
-                      <div
-                        key={index}
-                        className="w-full pt-3 flex items-stretch bg-white text-sm rounded-lg hover:bg-gray-100"
-                      >
-                        <div className="min-w-[160px] flex items-start ml-[42px] text-gray-500">
-                          <span>{row.name}</span>
-                        </div>
-                        <div className="font-medium text-gray-800">
-                          <span key={index} className="block leading-5 min-h-8 h-auto">
-                            {row.value}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    </div>
-                  </section>
-                  );
-                })
-              ) : (
-                <>
-                  <div className="flex flex-col mt-4 mb-16 gap-4">
-                    <SK_Box width="200px" height="30px" />
-                    <div className={"flex gap-5 items-center ml-10"}>
-                      <SK_Box width="10%" height="20px" />
-                      <SK_Box width="40%" height="16px" />
-                    </div>
-                    <div className={"flex gap-5 items-center ml-10"}>
-                      <SK_Box width="10%" height="20px" />
-                      <SK_Box width="40%" height="16px" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col mt-4 mb-16 gap-4">
-                    <SK_Box width="200px" height="30px" />
-                    <div className={"flex gap-5 items-center ml-10"}>
-                      <SK_Box width="10%" height="20px" />
-                      <SK_Box width="40%" height="16px" />
-                    </div>
-                    <div className={"flex gap-5 items-center ml-10"}>
-                      <SK_Box width="10%" height="20px" />
-                      <SK_Box width="40%" height="16px" />
-                    </div>
-                  </div>
-                </>
-              )}
+              {/* keyed by product so collapsed groups reset when moving to another product */}
+              <ProductSpecs key={productInfo.id} specifications={productInfo.specifications} />
             </div>
 
             {/* ----------------- USER REVIEWS ----------------- */}
@@ -226,8 +136,8 @@ const ProductPage = () => {
                 </div>
                 <div className="my-4 ml-12 text-sm leading-5 text-gary-900">
                   <span>
-                    {`Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                    Temporibus suscipit debitis reiciendis repellendus! Repellat rem beatae quo quis 
+                    {`Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    Temporibus suscipit debitis reiciendis repellendus! Repellat rem beatae quo quis
                     tenetur. Culpa quae ratione delectus id odit in nesciunt saepe pariatur vitae.`}
                   </span>
                 </div>

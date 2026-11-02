@@ -4,7 +4,7 @@ import { AlertCircle, ArrowLeft, CreditCard, Info, Loader2, Lock, ShoppingBag, T
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, InputHTMLAttributes, ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { FormEvent, InputHTMLAttributes, ReactNode, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { cancelCheckout, createCheckout, getCheckoutPreview } from "@/actions/checkout/checkout";
@@ -38,8 +38,6 @@ const FormField = ({
 
 const TextInput = (props: InputHTMLAttributes<HTMLInputElement>) => <input className={inputClass} {...props} />;
 
-const subscribeNoop = () => () => {};
-
 type TProps = {
   user: { name: string; email: string };
   isTestMode: boolean;
@@ -51,12 +49,8 @@ export const CheckoutView = ({ user, isTestMode, isPaymentConfigured }: TProps) 
   const searchParams = useSearchParams();
   const canceledOrderID = searchParams.get("canceled");
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  // the cart lives in localStorage, so wait for the browser before deciding the cart is empty
-  const isClient = useSyncExternalStore(
-    subscribeNoop,
-    () => true,
-    () => false
-  );
+  // the cart lives in localStorage, so wait until it has been restored before deciding the cart is empty
+  const isClient = useSelector((state: RootState) => state.cart.isRestored);
 
   const [preview, setPreview] = useState<TCheckoutPreview | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);

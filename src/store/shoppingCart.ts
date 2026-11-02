@@ -1,4 +1,4 @@
-import { PayloadAction, configureStore, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, configureStore, createAction, createSlice } from "@reduxjs/toolkit";
 
 import { TCartItem } from "@/shared/types/shoppingCart";
 
@@ -7,6 +7,8 @@ import { loadState, saveState } from "./storeLocalStorage";
 export type TCartState = {
   items: TCartItem[];
   isVisible: boolean;
+  /** false until the saved cart has been read from localStorage after hydration */
+  isRestored: boolean;
 };
 
 export type TFavoritesState = {
@@ -18,11 +20,23 @@ type QuantityChange = {
   amount: number;
 };
 
-const initialState: TCartState = { isVisible: false, items: [] };
+/**
+ * The store starts empty on the server and in the browser so server-rendered HTML always matches the first
+ * client render; the saved cart and favorites are restored right after hydration (see StoreProviders).
+ */
+export const restoreSession = createAction<{ items: TCartItem[]; favoriteIds: string[] }>("session/restore");
+
+const initialState: TCartState = { isVisible: false, items: [], isRestored: false };
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
+  extraReducers: (builder) => {
+    builder.addCase(restoreSession, (state, action) => {
+      state.items = action.payload.items;
+      state.isRestored = true;
+    });
+  },
   reducers: {
     add: (state: TCartState, action: PayloadAction<TCartItem>) => {
       const isAvailable = state.items.findIndex((item) => item.productId === action.payload.productId);
@@ -56,6 +70,11 @@ const favoritesInitialState: TFavoritesState = { ids: [] };
 const favoritesSlice = createSlice({
   name: "favorites",
   initialState: favoritesInitialState,
+  extraReducers: (builder) => {
+    builder.addCase(restoreSession, (state, action) => {
+      state.ids = action.payload.favoriteIds;
+    });
+  },
   reducers: {
     toggleFavorite: (state, action: PayloadAction<string>) => {
       const id = action.payload;
@@ -72,27 +91,25 @@ const favoritesSlice = createSlice({
   },
 });
 
-const persisted = loadState();
-
 export const shoppingCartStore = configureStore({
   reducer: {
     cart: cartSlice.reducer,
     favorites: favoritesSlice.reducer,
   },
-  preloadedState: {
-    cart: {
-      ...initialState,
-      ...persisted.cart,
-      items: persisted.cart.items as TCartItem[],
-    },
-    favorites: {
-      ...favoritesInitialState,
-      ...persisted.favorites,
-    },
-  },
 });
+
+/** Reads the saved cart and favorites. Call once in the browser, after hydration. */
+export const restoreSavedSession = () => {
+  if (shoppingCartStore.getState().cart.isRestored) return;
+  const saved = loadState();
+  shoppingCartStore.dispatch(
+    restoreSession({ items: saved.cart.items as TCartItem[], favoriteIds: saved.favorites.ids })
+  );
+};
+
 shoppingCartStore.subscribe(() => {
-  saveState(shoppingCartStore.getState());
+  // never overwrite the saved session with the empty state used before restoring it
+  if (shoppingCartStore.getState().cart.isRestored) saveState(shoppingCartStore.getState());
 });
 
 export type RootState = ReturnType<typeof shoppingCartStore.getState>;

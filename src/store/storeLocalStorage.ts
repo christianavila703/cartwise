@@ -32,10 +32,11 @@ export const loadState = (): TPersistedState => {
     return tempState;
   }
 };
-export const saveState = (state: { cart: unknown; favorites: TFavoritesPersisted }) => {
+export const saveState = (state: { cart: { items: unknown[] }; favorites: TFavoritesPersisted }) => {
   try {
     const serializedState = JSON.stringify({
-      cart: state.cart,
+      // only the items are saved; UI state like an open cart drawer shouldn't come back on the next visit
+      cart: { items: state.cart.items, isVisible: false },
       favorites: state.favorites,
     });
     localStorage.setItem(localStorageName, serializedState);

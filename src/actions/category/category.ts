@@ -1,6 +1,8 @@
 "use server";
+import { updateTag } from "next/cache";
 import { z } from "zod";
 
+import { CATEGORIES_TAG } from "@/shared/constants/cacheTags";
 import { isAdmin, UNAUTHORIZED } from "@/shared/lib/auth";
 import { db } from "@/shared/lib/db";
 import { TCategory, TGroupJSON } from "@/shared/types/categories";
@@ -129,6 +131,8 @@ export const addCategory = async (data: TAddCategory) => {
         iconUrl: data.iconUrl,
       },
     });
+    // the store menus show categories, so refresh their cache
+    updateTag(CATEGORIES_TAG);
     return { res: result };
   } catch {
     return { error: "Can't add the category" };
@@ -159,6 +163,8 @@ export const updateCategory = async (data: TUpdateCategory) => {
         ...values,
       },
     });
+    // the store menus show categories, so refresh their cache
+    updateTag(CATEGORIES_TAG);
     return { res: result };
   } catch {
     return { error: "Can't update the category" };
@@ -183,6 +189,8 @@ export const deleteCategory = async (id: string) => {
         id,
       },
     });
+    // the store menus show categories, so refresh their cache
+    updateTag(CATEGORIES_TAG);
     return { res: JSON.stringify(result) };
   } catch {
     return { error: "Can't delete the category" };
